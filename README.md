@@ -13,7 +13,7 @@ python server.py
 
 #### 主要功能分成3塊
 
-- 首頁功能`upload`及`centerity`，分別為首頁的上傳功能及分析中心性資料並儲存
+- 首頁功能`upload`及`centerity`，分別為首頁的上傳功能及分析資料並儲存
 <img width="329" alt="截圖 2025-03-19 晚上9 59 23" src="https://github.com/user-attachments/assets/9b354593-b4de-4fa1-a399-42de27f3af8c" />
 
 - 資料列表頁功能`get_file`及`check-file`，分別為列出有哪些資料已上傳，以及在點擊資料欲查看分析時，判斷資料是否已分析完畢
