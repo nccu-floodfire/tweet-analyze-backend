@@ -19,7 +19,6 @@ CORS(app)  # Enable CORS for all routes
 
 @app.route("/upload", methods=["POST"])
 def upload():  # 儲存檔案及分週檔案
-
     file = request.files["file"]
     #     print(file)
 
@@ -30,28 +29,45 @@ def upload():  # 儲存檔案及分週檔案
     startDate3 = request.form.get("startDate3")  # 獲取開始日期
     endDate3 = request.form.get("endDate3")  # 獲取結束日期
 
-    new_filename = f"{file.filename}_{startDate1}_{endDate1}_{startDate2}_{endDate2}_{startDate3}_{endDate3}.csv"
-    foldername = f"{file.filename}_{startDate1}_{endDate1}_{startDate2}_{endDate2}_{startDate3}_{endDate3}"
+    new_base_name = f"{file.filename}_{startDate1}_{endDate1}_{startDate2}_{endDate2}_{startDate3}_{endDate3}"
+    new_filename = f"{new_base_name}.csv"
+    folder_name = new_base_name
+
+    # 放置資料的資料夾
     data_folder = "data"
+    # 將上傳的檔案儲存成新的檔案名稱
     file.save(os.path.join(data_folder, new_filename))
-    full_path = os.path.join(data_folder, foldername)
-    #     print(full_path)
-    if not os.path.exists(full_path):
-        os.makedirs(full_path)
+
+    # 建立事件資料夾
+    event_folder = os.path.join(data_folder, folder_name)
+    #     print(event_folder)
+    if not os.path.exists(event_folder):
+        os.makedirs(event_folder)
     #     if os.path.exists(os.path.join(data_folder,new_filename)):
     #         return jsonify({'result': '上傳成功1'})
 
-    file = pd.read_csv(os.path.join(data_folder, new_filename))
+    file = pd.read_csv(
+        os.path.join(data_folder, new_filename),
+        engine="python",
+        quotechar='"',
+    )
     file["created_at"] = pd.to_datetime(file["created_at"])
     file["period"] = file["created_at"].dt.to_period("W-SUN")
     groups = file.groupby("period")
-    datasets = {period: group for period, group in groups}
+    datasets = {}
+    for period, group in groups:
+        datasets[period] = group
+
     datasets_list = list(datasets.values())
+    print(datasets_list)
+    print(len(datasets_list))
     for i in range(len(datasets_list) - 1):
         combined_dataset = pd.concat([datasets_list[i], datasets_list[i + 1]])
         max_date = combined_dataset["created_at"].max().strftime("%Y%m%d")
         print(max_date)
-        combined_dataset.to_csv(os.path.join(full_path, f"{max_date}.csv"), index=False)
+        combined_dataset.to_csv(
+            os.path.join(event_folder, f"{max_date}.csv"), index=False
+        )
     if startDate1 and endDate1:
         startDate1 = datetime.strptime(startDate1, "%Y-%m-%d")
         startDate1 = startDate1.strftime("%Y%m%d")
@@ -60,7 +76,8 @@ def upload():  # 儲存檔案及分週檔案
 
         data = file[file["created_at"].between(startDate1, endDate1)]
         data.to_csv(
-            os.path.join(full_path, f"事件一：{startDate1}_{endDate1}.csv"), index=False
+            os.path.join(event_folder, f"事件一：{startDate1}_{endDate1}.csv"),
+            index=False,
         )
     if startDate2 and endDate2:
         startDate2 = datetime.strptime(startDate2, "%Y-%m-%d")
@@ -70,7 +87,8 @@ def upload():  # 儲存檔案及分週檔案
 
         data = file[file["created_at"].between(startDate2, endDate2)]
         data.to_csv(
-            os.path.join(full_path, f"事件二：{startDate2}_{endDate2}.csv"), index=False
+            os.path.join(event_folder, f"事件二：{startDate2}_{endDate2}.csv"),
+            index=False,
         )
     if startDate3 and endDate3:
         startDate3 = datetime.strptime(startDate3, "%Y-%m-%d")
@@ -80,7 +98,8 @@ def upload():  # 儲存檔案及分週檔案
 
         data = file[file["created_at"].between(startDate3, endDate3)]
         data.to_csv(
-            os.path.join(full_path, f"事件三：{startDate3}_{endDate3}.csv"), index=False
+            os.path.join(event_folder, f"事件三：{startDate3}_{endDate3}.csv"),
+            index=False,
         )
 
     return jsonify({"result": "Success!"})
@@ -88,7 +107,6 @@ def upload():  # 儲存檔案及分週檔案
 
 @app.route("/centerity", methods=["POST"])
 def centerity():  # 儲存社群網路資料及btm資料
-
     file = request.files["file"]
     dic_file = request.files.get("dic_file")
     startDate1 = request.form.get("startDate1")  # 獲取開始日期
@@ -690,7 +708,7 @@ def btm_doc():
 
 
 @app.route("/network", methods=["POST"])
-def network():
+def network_route():
     filename = request.form.get("filename")  # 獲取 filename
     folder = f"{filename}"
     folder2 = "network"
@@ -705,7 +723,7 @@ def network():
     # network = {}
     for json_file in files:
         if json_file.endswith(f"{range}_{cen_type}.json"):
-            with open(os.path.join(full_path, json_file), "r") as f:
+            with open(os.path.join(full_path, json_file)) as f:
                 data = json.load(f)
             # data = pd.read_json(os.path.join(full_path, json_file))
             # network[json_file] = data.to_dict()  # 將 DataFrame 轉換為字典並存儲在結果中
@@ -824,7 +842,9 @@ def timeline():
     data["created_at"] = pd.to_datetime(data["created_at"])
     data["period"] = data["created_at"].dt.to_period("W-SUN")
     groups = data.groupby("period")
-    datasets = {period: group for period, group in groups}
+    datasets = datasets = {}
+    for period, group in groups:
+        datasets[period] = group
     datasets_list = list(datasets.values())
     highlightPeriods = []
     for i in range(len(datasets_list) - 1):
