@@ -39,6 +39,7 @@ def upload():  # 儲存檔案及分週檔案
     file.save(os.path.join(data_folder, new_filename))
 
     # 建立事件資料夾
+    # EX：event_folder 可能為 "data/yourfile_20230101_20230107_20230108_20230114_20230115_20230121"
     event_folder = os.path.join(data_folder, folder_name)
     #     print(event_folder)
     if not os.path.exists(event_folder):
@@ -46,28 +47,43 @@ def upload():  # 儲存檔案及分週檔案
     #     if os.path.exists(os.path.join(data_folder,new_filename)):
     #         return jsonify({'result': '上傳成功1'})
 
+    # 讀取剛剛儲存的 CSV 檔案，指定使用的引擎與引號字元以避免解析錯誤
     file = pd.read_csv(
         os.path.join(data_folder, new_filename),
         engine="python",
         quotechar='"',
     )
+
+    # 將 "created_at" 欄位轉換為 datetime 物件，方便後續依時間分組與處理
     file["created_at"] = pd.to_datetime(file["created_at"])
+
+    # 將 "created_at" 欄位依每週分組，新增 "period" 欄位
     file["period"] = file["created_at"].dt.to_period("W-SUN")
     groups = file.groupby("period")
+
+    # 將每週的資料分組存入字典，key 為週期，value 為該週的資料
     datasets = {}
     for period, group in groups:
         datasets[period] = group
 
+    # 將分組後的資料轉為 list，方便後續合併處理
     datasets_list = list(datasets.values())
     print(datasets_list)
     print(len(datasets_list))
+
+    # 依據每兩週合併資料，並將合併後的資料儲存為新的 CSV 檔案
     for i in range(len(datasets_list) - 1):
+        # 合併連續兩週的資料
         combined_dataset = pd.concat([datasets_list[i], datasets_list[i + 1]])
+        # 取得合併後資料的最大日期，作為檔案名稱的一部分
         max_date = combined_dataset["created_at"].max().strftime("%Y%m%d")
         print(max_date)
+        # 將合併後的資料儲存為 CSV 檔案，檔名為最大日期
         combined_dataset.to_csv(
             os.path.join(event_folder, f"{max_date}.csv"), index=False
         )
+
+    # 根據使用者輸入的事件一日期範圍，篩選資料並儲存為對應的 CSV 檔案
     if startDate1 and endDate1:
         startDate1 = datetime.strptime(startDate1, "%Y-%m-%d")
         startDate1 = startDate1.strftime("%Y%m%d")
@@ -79,6 +95,7 @@ def upload():  # 儲存檔案及分週檔案
             os.path.join(event_folder, f"事件一：{startDate1}_{endDate1}.csv"),
             index=False,
         )
+    # 根據使用者輸入的事件二日期範圍，篩選資料並儲存為對應的 CSV 檔案
     if startDate2 and endDate2:
         startDate2 = datetime.strptime(startDate2, "%Y-%m-%d")
         startDate2 = startDate2.strftime("%Y%m%d")
@@ -90,6 +107,7 @@ def upload():  # 儲存檔案及分週檔案
             os.path.join(event_folder, f"事件二：{startDate2}_{endDate2}.csv"),
             index=False,
         )
+    # 根據使用者輸入的事件三日期範圍，篩選資料並儲存為對應的 CSV 檔案
     if startDate3 and endDate3:
         startDate3 = datetime.strptime(startDate3, "%Y-%m-%d")
         startDate3 = startDate3.strftime("%Y%m%d")
