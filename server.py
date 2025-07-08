@@ -22,14 +22,14 @@ def upload():  # 儲存檔案及分週檔案
     file = request.files["file"]
     #     print(file)
 
-    startDate1 = request.form.get("startDate1")  # 獲取開始日期
-    endDate1 = request.form.get("endDate1")  # 獲取結束日期
-    startDate2 = request.form.get("startDate2")  # 獲取開始日期
-    endDate2 = request.form.get("endDate2")  # 獲取結束日期
-    startDate3 = request.form.get("startDate3")  # 獲取開始日期
-    endDate3 = request.form.get("endDate3")  # 獲取結束日期
+    start_date1 = request.form.get("startDate1")  # 獲取開始日期
+    end_date1 = request.form.get("endDate1")  # 獲取結束日期
+    start_date2 = request.form.get("startDate2")  # 獲取開始日期
+    end_date2 = request.form.get("endDate2")  # 獲取結束日期
+    start_date3 = request.form.get("startDate3")  # 獲取開始日期
+    end_date3 = request.form.get("endDate3")  # 獲取結束日期
 
-    new_base_name = f"{file.filename}_{startDate1}_{endDate1}_{startDate2}_{endDate2}_{startDate3}_{endDate3}"
+    new_base_name = f"{file.filename}_{start_date1}_{end_date1}_{start_date2}_{end_date2}_{start_date3}_{end_date3}"
     new_filename = f"{new_base_name}.csv"
     folder_name = new_base_name
 
@@ -84,39 +84,39 @@ def upload():  # 儲存檔案及分週檔案
         )
 
     # 根據使用者輸入的事件一日期範圍，篩選資料並儲存為對應的 CSV 檔案
-    if startDate1 and endDate1:
-        startDate1 = datetime.strptime(startDate1, "%Y-%m-%d")
-        startDate1 = startDate1.strftime("%Y%m%d")
-        endDate1 = datetime.strptime(endDate1, "%Y-%m-%d")
-        endDate1 = endDate1.strftime("%Y%m%d")
+    if start_date1 and end_date1:
+        start_date1 = datetime.strptime(start_date1, "%Y-%m-%d")
+        start_date1 = start_date1.strftime("%Y%m%d")
+        end_date1 = datetime.strptime(end_date1, "%Y-%m-%d")
+        end_date1 = end_date1.strftime("%Y%m%d")
 
-        data = file[file["created_at"].between(startDate1, endDate1)]
+        data = file[file["created_at"].between(start_date1, end_date1)]
         data.to_csv(
-            os.path.join(event_folder, f"事件一：{startDate1}_{endDate1}.csv"),
+            os.path.join(event_folder, f"事件一：{start_date1}_{end_date1}.csv"),
             index=False,
         )
     # 根據使用者輸入的事件二日期範圍，篩選資料並儲存為對應的 CSV 檔案
-    if startDate2 and endDate2:
-        startDate2 = datetime.strptime(startDate2, "%Y-%m-%d")
-        startDate2 = startDate2.strftime("%Y%m%d")
-        endDate2 = datetime.strptime(endDate2, "%Y-%m-%d")
-        endDate2 = endDate2.strftime("%Y%m%d")
+    if start_date2 and end_date2:
+        start_date2 = datetime.strptime(start_date2, "%Y-%m-%d")
+        start_date2 = start_date2.strftime("%Y%m%d")
+        end_date2 = datetime.strptime(end_date2, "%Y-%m-%d")
+        end_date2 = end_date2.strftime("%Y%m%d")
 
-        data = file[file["created_at"].between(startDate2, endDate2)]
+        data = file[file["created_at"].between(start_date2, end_date2)]
         data.to_csv(
-            os.path.join(event_folder, f"事件二：{startDate2}_{endDate2}.csv"),
+            os.path.join(event_folder, f"事件二：{start_date2}_{end_date2}.csv"),
             index=False,
         )
     # 根據使用者輸入的事件三日期範圍，篩選資料並儲存為對應的 CSV 檔案
-    if startDate3 and endDate3:
-        startDate3 = datetime.strptime(startDate3, "%Y-%m-%d")
-        startDate3 = startDate3.strftime("%Y%m%d")
-        endDate3 = datetime.strptime(endDate3, "%Y-%m-%d")
-        endDate3 = endDate3.strftime("%Y%m%d")
+    if start_date3 and end_date3:
+        start_date3 = datetime.strptime(start_date3, "%Y-%m-%d")
+        start_date3 = start_date3.strftime("%Y%m%d")
+        end_date3 = datetime.strptime(end_date3, "%Y-%m-%d")
+        end_date3 = end_date3.strftime("%Y%m%d")
 
-        data = file[file["created_at"].between(startDate3, endDate3)]
+        data = file[file["created_at"].between(start_date3, end_date3)]
         data.to_csv(
-            os.path.join(event_folder, f"事件三：{startDate3}_{endDate3}.csv"),
+            os.path.join(event_folder, f"事件三：{start_date3}_{end_date3}.csv"),
             index=False,
         )
 
