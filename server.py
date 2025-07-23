@@ -134,40 +134,37 @@ def centerity():  # 儲存社群網路資料及btm資料
     startDate3 = request.form.get("startDate3")  # 獲取開始日期
     endDate3 = request.form.get("endDate3")  # 獲取結束日期
 
-    new_filename = f"{file.filename}_{startDate1}_{endDate1}_{startDate2}_{endDate2}_{startDate3}_{endDate3}"
+    new_base_name = f"{file.filename}_{startDate1}_{endDate1}_{startDate2}_{endDate2}_{startDate3}_{endDate3}"
     data_folder = "data"
-    full_path = os.path.join(data_folder, new_filename)
+    data_save_path = os.path.join(data_folder, new_base_name)
+    # 檢查基本儲存位置並建立資料夾
+    if not os.path.exists(data_save_path):
+        os.makedirs(data_save_path)
 
-    save_folder = new_filename
-    folder2 = "centerity"
-    folder3 = "btm"
-    folder4 = "topics_coords"
-    folder5 = "terms_probs"
-    folder6 = "top_5_doc"
-    folder7 = "network"
+    # 儲存路徑位址
+    centrality_path = os.path.join(data_save_path, "centrality")
+    topics_coords_path = os.path.join(data_save_path, "btm", "topics_coords")
+    terms_probs_path = os.path.join(data_save_path, "btm", "terms_probs")
+    top_5_doc_path = os.path.join(data_save_path, "btm", "top_5_doc")
+    network_path = os.path.join(data_save_path, "network")
 
-    save_path = os.path.join(save_folder, folder2)
-    save_path2 = os.path.join(save_folder, folder3, folder4)
-    save_path3 = os.path.join(save_folder, folder3, folder5)
-    save_path4 = os.path.join(save_folder, folder3, folder6)
-    save_path5 = os.path.join(save_folder, folder7)
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
-    if not os.path.exists(save_path2):
-        os.makedirs(save_path2)
-    if not os.path.exists(save_path3):
-        os.makedirs(save_path3)
-    if not os.path.exists(save_path4):
-        os.makedirs(save_path4)
-    if not os.path.exists(save_path5):
-        os.makedirs(save_path5)
+    if not os.path.exists(centrality_path):
+        os.makedirs(centrality_path)
+    if not os.path.exists(topics_coords_path):
+        os.makedirs(topics_coords_path)
+    if not os.path.exists(terms_probs_path):
+        os.makedirs(terms_probs_path)
+    if not os.path.exists(top_5_doc_path):
+        os.makedirs(top_5_doc_path)
+    if not os.path.exists(network_path):
+        os.makedirs(network_path)
 
     # save dic_file to os.path.join(save_folder,dictionary.txt)
     if dic_file:
-        dic_path = os.path.join(save_folder, "dictionary.txt")
+        dic_path = os.path.join(data_save_path, "dictionary.txt")
         dic_file.save(dic_path)
 
-    files = os.listdir(full_path)
+    files = os.listdir(data_save_path)
     print(files)
     Stance = pd.DataFrame()
     raw_predict_data = pd.DataFrame()
@@ -176,20 +173,20 @@ def centerity():  # 儲存社群網路資料及btm資料
         if file.startswith("2"):
             print(file)
             formatted_date = file.split(".")[0]
-            path = os.path.join(save_path, f"{formatted_date}.csv")
-            degree_path = os.path.join(save_path5, f"{formatted_date}_degree.json")
+            path = os.path.join(centrality_path, f"{formatted_date}.csv")
+            degree_path = os.path.join(network_path, f"{formatted_date}_degree.json")
             betweeness_path = os.path.join(
-                save_path5, f"{formatted_date}_betweeness.json"
+                network_path, f"{formatted_date}_betweeness.json"
             )
             closeness_path = os.path.join(
-                save_path5, f"{formatted_date}_closeness.json"
+                network_path, f"{formatted_date}_closeness.json"
             )
             eigenvector_path = os.path.join(
-                save_path5, f"{formatted_date}_eigenvector.json"
+                network_path, f"{formatted_date}_eigenvector.json"
             )
 
             if not os.path.exists(path):
-                combined_dataset = pd.read_csv(os.path.join(full_path, file))
+                combined_dataset = pd.read_csv(os.path.join(data_save_path, file))
                 (
                     score,
                     network_degree,
@@ -225,7 +222,7 @@ def centerity():  # 儲存社群網路資料及btm資料
                 else:
                     Stance = pd.merge(Stance, temp_df, on=["user", "name"], how="outer")
                 # btm
-                path1 = os.path.join(save_path2, f"{formatted_date}.csv")
+                path1 = os.path.join(topics_coords_path, f"{formatted_date}.csv")
                 if not os.path.exists(path1):
                     if dic_file:
                         topics_coords, terms_probs, top_5_doc = btm_analysis(
@@ -239,12 +236,12 @@ def centerity():  # 儲存社群網路資料及btm資料
                     topics_coords.to_csv(path1, index=False)
                     for topic, df in terms_probs.items():
                         path2 = os.path.join(
-                            save_path3, f"{formatted_date}_{topic}.csv"
+                            terms_probs_path, f"{formatted_date}_{topic}.csv"
                         )
                         df.to_csv(path2, index=False)
                     for topic, df in top_5_doc.items():
                         path3 = os.path.join(
-                            save_path4, f"{formatted_date}_{topic}.csv"
+                            top_5_doc_path, f"{formatted_date}_{topic}.csv"
                         )
                         df.to_csv(path3, index=False)
 
@@ -274,20 +271,20 @@ def centerity():  # 儲存社群網路資料及btm資料
         endDate1 = endDate1.strftime("%Y%m%d")
 
         data = pd.read_csv(
-            os.path.join(full_path, f"事件一：{startDate1}_{endDate1}.csv")
+            os.path.join(data_save_path, f"事件一：{startDate1}_{endDate1}.csv")
         )
-        path = os.path.join(save_path, f"事件一：{startDate1}_{endDate1}.csv")
+        path = os.path.join(centrality_path, f"事件一：{startDate1}_{endDate1}.csv")
         degree_path = os.path.join(
-            save_path5, f"事件一：{startDate1}_{endDate1}_degree.json"
+            network_path, f"事件一：{startDate1}_{endDate1}_degree.json"
         )
         betweeness_path = os.path.join(
-            save_path5, f"事件一：{startDate1}_{endDate1}_betweeness.json"
+            network_path, f"事件一：{startDate1}_{endDate1}_betweeness.json"
         )
         closeness_path = os.path.join(
-            save_path5, f"事件一：{startDate1}_{endDate1}_closeness.json"
+            network_path, f"事件一：{startDate1}_{endDate1}_closeness.json"
         )
         eigenvector_path = os.path.join(
-            save_path5, f"事件一：{startDate1}_{endDate1}_eigenvector.json"
+            network_path, f"事件一：{startDate1}_{endDate1}_eigenvector.json"
         )
 
         (
@@ -324,7 +321,7 @@ def centerity():  # 儲存社群網路資料及btm資料
         else:
             Stance = pd.merge(Stance, temp_df, on=["user", "name"], how="outer")
         # btm
-        path1 = os.path.join(save_path2, f"事件一：{startDate1}_{endDate1}.csv")
+        path1 = os.path.join(topics_coords_path, f"事件一：{startDate1}_{endDate1}.csv")
         if not os.path.exists(path1):
             if dic_path:
                 topics_coords, terms_probs, top_5_doc = btm_analysis(data, dic_path)
@@ -333,12 +330,12 @@ def centerity():  # 儲存社群網路資料及btm資料
             topics_coords.to_csv(path1, index=False)
             for topic, df in terms_probs.items():
                 path2 = os.path.join(
-                    save_path3, f"事件一：{startDate1}_{endDate1}_{topic}.csv"
+                    terms_probs_path, f"事件一：{startDate1}_{endDate1}_{topic}.csv"
                 )
                 df.to_csv(path2, index=False)
             for topic, df in top_5_doc.items():
                 path3 = os.path.join(
-                    save_path4, f"事件一：{startDate1}_{endDate1}_{topic}.csv"
+                    top_5_doc_path, f"事件一：{startDate1}_{endDate1}_{topic}.csv"
                 )
                 df.to_csv(path3, index=False)
         # 下載立場原始資料
@@ -364,21 +361,21 @@ def centerity():  # 儲存社群網路資料及btm資料
         endDate2 = datetime.strptime(endDate2, "%Y-%m-%d")
         endDate2 = endDate2.strftime("%Y%m%d")
         data = pd.read_csv(
-            os.path.join(full_path, f"事件二：{startDate2}_{endDate2}.csv")
+            os.path.join(data_save_path, f"事件二：{startDate2}_{endDate2}.csv")
         )
 
-        path = os.path.join(save_path, f"事件二：{startDate2}_{endDate2}.csv")
+        path = os.path.join(centrality_path, f"事件二：{startDate2}_{endDate2}.csv")
         degree_path = os.path.join(
-            save_path5, f"事件二：{startDate2}_{endDate2}_degree.json"
+            network_path, f"事件二：{startDate2}_{endDate2}_degree.json"
         )
         betweeness_path = os.path.join(
-            save_path5, f"事件二：{startDate2}_{endDate2}_betweeness.json"
+            network_path, f"事件二：{startDate2}_{endDate2}_betweeness.json"
         )
         closeness_path = os.path.join(
-            save_path5, f"事件二：{startDate2}_{endDate2}_closeness.json"
+            network_path, f"事件二：{startDate2}_{endDate2}_closeness.json"
         )
         eigenvector_path = os.path.join(
-            save_path5, f"事件二：{startDate2}_{endDate2}_eigenvector.json"
+            network_path, f"事件二：{startDate2}_{endDate2}_eigenvector.json"
         )
 
         (
@@ -415,7 +412,7 @@ def centerity():  # 儲存社群網路資料及btm資料
         else:
             Stance = pd.merge(Stance, temp_df, on=["user", "name"], how="outer")
         # btm
-        path1 = os.path.join(save_path2, f"事件二：{startDate2}_{endDate2}.csv")
+        path1 = os.path.join(topics_coords_path, f"事件二：{startDate2}_{endDate2}.csv")
         if not os.path.exists(path1):
             if dic_path:
                 topics_coords, terms_probs, top_5_doc = btm_analysis(data, dic_path)
@@ -424,12 +421,12 @@ def centerity():  # 儲存社群網路資料及btm資料
             topics_coords.to_csv(path1, index=False)
             for topic, df in terms_probs.items():
                 path2 = os.path.join(
-                    save_path3, f"事件二：{startDate1}_{endDate1}_{topic}.csv"
+                    terms_probs_path, f"事件二：{startDate1}_{endDate1}_{topic}.csv"
                 )
                 df.to_csv(path2, index=False)
             for topic, df in top_5_doc.items():
                 path3 = os.path.join(
-                    save_path4, f"事件二：{startDate1}_{endDate1}_{topic}.csv"
+                    top_5_doc_path, f"事件二：{startDate1}_{endDate1}_{topic}.csv"
                 )
                 df.to_csv(path3, index=False)
         # 下載立場原始資料
@@ -455,21 +452,21 @@ def centerity():  # 儲存社群網路資料及btm資料
         endDate3 = datetime.strptime(endDate3, "%Y-%m-%d")
         endDate3 = endDate3.strftime("%Y%m%d")
         data = pd.read_csv(
-            os.path.join(full_path, f"事件三：{startDate3}_{endDate3}.csv")
+            os.path.join(data_save_path, f"事件三：{startDate3}_{endDate3}.csv")
         )
 
-        path = os.path.join(save_path, f"事件三：{startDate3}_{endDate3}..csv")
+        path = os.path.join(centrality_path, f"事件三：{startDate3}_{endDate3}..csv")
         degree_path = os.path.join(
-            save_path5, f"事件三：{startDate3}_{endDate3}_degree.json"
+            network_path, f"事件三：{startDate3}_{endDate3}_degree.json"
         )
         betweeness_path = os.path.join(
-            save_path5, f"事件三：{startDate3}_{endDate3}_betweeness.json"
+            network_path, f"事件三：{startDate3}_{endDate3}_betweeness.json"
         )
         closeness_path = os.path.join(
-            save_path5, f"事件三：{startDate3}_{endDate3}_closeness.json"
+            network_path, f"事件三：{startDate3}_{endDate3}_closeness.json"
         )
         eigenvector_path = os.path.join(
-            save_path5, f"事件三：{startDate3}_{endDate3}_eigenvector.json"
+            network_path, f"事件三：{startDate3}_{endDate3}_eigenvector.json"
         )
 
         (
@@ -506,7 +503,7 @@ def centerity():  # 儲存社群網路資料及btm資料
         else:
             Stance = pd.merge(Stance, temp_df, on=["user", "name"], how="outer")
         # btm
-        path1 = os.path.join(save_path2, f"事件三：{startDate3}_{endDate3}.csv")
+        path1 = os.path.join(topics_coords_path, f"事件三：{startDate3}_{endDate3}.csv")
         if not os.path.exists(path1):
             if dic_path:
                 topics_coords, terms_probs, top_5_doc = btm_analysis(data, dic_path)
@@ -515,12 +512,12 @@ def centerity():  # 儲存社群網路資料及btm資料
             topics_coords.to_csv(path1, index=False)
             for topic, df in terms_probs.items():
                 path2 = os.path.join(
-                    save_path3, f"事件三：{startDate1}_{endDate1}_{topic}.csv"
+                    terms_probs_path, f"事件三：{startDate1}_{endDate1}_{topic}.csv"
                 )
                 df.to_csv(path2, index=False)
             for topic, df in top_5_doc.items():
                 path3 = os.path.join(
-                    save_path4, f"事件三：{startDate1}_{endDate1}_{topic}.csv"
+                    top_5_doc_path, f"事件三：{startDate1}_{endDate1}_{topic}.csv"
                 )
                 df.to_csv(path3, index=False)
         # 下載立場原始資料
@@ -545,13 +542,13 @@ def centerity():  # 儲存社群網路資料及btm資料
     Stance = Stance[sorted_columns]
 
     stancefolder = "stance"
-    stancepath = os.path.join(save_folder, stancefolder)
+    stancepath = os.path.join(data_save_path, stancefolder)
     if not os.path.exists(stancepath):
         os.makedirs(stancepath)
     Stance.to_csv(os.path.join(stancepath, "Stance.csv"), index=False)
 
     downloadfolder = "download"
-    downloadpath = os.path.join(save_folder, downloadfolder)
+    downloadpath = os.path.join(data_save_path, downloadfolder)
     if not os.path.exists(downloadpath):
         os.makedirs(downloadpath)
     raw_predict_data.to_csv(os.path.join(downloadpath, "Download.csv"), index=False)
