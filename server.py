@@ -9,7 +9,7 @@ from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS  # Import CORS from Flask-CORS
 
 from btm import btm_analysis
-from centerityScore import centerityScore
+from centrality_score import centralityScore
 from network import network
 from statisticCalcu import statisticCalcu
 
@@ -175,8 +175,8 @@ def centerity():  # 儲存社群網路資料及btm資料
             formatted_date = file.split(".")[0]
             path = os.path.join(centrality_path, f"{formatted_date}.csv")
             degree_path = os.path.join(network_path, f"{formatted_date}_degree.json")
-            betweeness_path = os.path.join(
-                network_path, f"{formatted_date}_betweeness.json"
+            betweenness_path = os.path.join(
+                network_path, f"{formatted_date}_betweenness.json"
             )
             closeness_path = os.path.join(
                 network_path, f"{formatted_date}_closeness.json"
@@ -190,20 +190,20 @@ def centerity():  # 儲存社群網路資料及btm資料
                 (
                     score,
                     network_degree,
-                    network_betweeness,
+                    network_betweenness,
                     network_closeness,
                     network_eigenvector,
                     result,
                     filtered_dataset,
-                ) = centerityScore(combined_dataset, path)
-                # score = centerityScore(combined_dataset, path)
+                ) = centralityScore(combined_dataset, path)
+                # score = centralityScore(combined_dataset, path)
 
                 if not os.path.exists(path):  # 中心性
                     score.to_csv(path, index=False)
                 with open(degree_path, "w") as file:
                     json.dump(network_degree, file, indent=4)
-                with open(betweeness_path, "w") as file:
-                    json.dump(network_betweeness, file, indent=4)
+                with open(betweenness_path, "w") as file:
+                    json.dump(network_betweenness, file, indent=4)
                 with open(closeness_path, "w") as file:
                     json.dump(network_closeness, file, indent=4)
                 with open(eigenvector_path, "w") as file:
@@ -277,8 +277,8 @@ def centerity():  # 儲存社群網路資料及btm資料
         degree_path = os.path.join(
             network_path, f"事件一：{startDate1}_{endDate1}_degree.json"
         )
-        betweeness_path = os.path.join(
-            network_path, f"事件一：{startDate1}_{endDate1}_betweeness.json"
+        betweenness_path = os.path.join(
+            network_path, f"事件一：{startDate1}_{endDate1}_betweenness.json"
         )
         closeness_path = os.path.join(
             network_path, f"事件一：{startDate1}_{endDate1}_closeness.json"
@@ -290,20 +290,20 @@ def centerity():  # 儲存社群網路資料及btm資料
         (
             event_scores1,
             event1_network_degree,
-            event1_network_betweeness,
+            event1_network_betweenness,
             event1_network_closeness,
             event1_network_eigenvector,
             result,
             filtered_dataset,
-        ) = centerityScore(data, path)
-        # event_scores1 = centerityScore(data,path)
+        ) = centralityScore(data, path)
+        # event_scores1 = centralityScore(data,path)
 
         if not os.path.exists(path):
             event_scores1.to_csv(path, index=False)
         with open(degree_path, "w") as file:
             json.dump(event1_network_degree, file, indent=4)
-        with open(betweeness_path, "w") as file:
-            json.dump(event1_network_betweeness, file, indent=4)
+        with open(betweenness_path, "w") as file:
+            json.dump(event1_network_betweenness, file, indent=4)
         with open(closeness_path, "w") as file:
             json.dump(event1_network_closeness, file, indent=4)
         with open(eigenvector_path, "w") as file:
@@ -368,8 +368,8 @@ def centerity():  # 儲存社群網路資料及btm資料
         degree_path = os.path.join(
             network_path, f"事件二：{startDate2}_{endDate2}_degree.json"
         )
-        betweeness_path = os.path.join(
-            network_path, f"事件二：{startDate2}_{endDate2}_betweeness.json"
+        betweenness_path = os.path.join(
+            network_path, f"事件二：{startDate2}_{endDate2}_betweenness.json"
         )
         closeness_path = os.path.join(
             network_path, f"事件二：{startDate2}_{endDate2}_closeness.json"
@@ -381,20 +381,20 @@ def centerity():  # 儲存社群網路資料及btm資料
         (
             event_scores2,
             event2_network_degree,
-            event2_network_betweeness,
+            event2_network_betweenness,
             event2_network_closeness,
             event2_network_eigenvector,
             result,
             filtered_dataset,
-        ) = centerityScore(data, path)
-        # event_scores2 = centerityScore(data,path)
+        ) = centralityScore(data, path)
+        # event_scores2 = centralityScore(data,path)
 
         if not os.path.exists(path):
             event_scores2.to_csv(path, index=False)
         with open(degree_path, "w") as file:
             json.dump(event2_network_degree, file, indent=4)
-        with open(betweeness_path, "w") as file:
-            json.dump(event2_network_betweeness, file, indent=4)
+        with open(betweenness_path, "w") as file:
+            json.dump(event2_network_betweenness, file, indent=4)
         with open(closeness_path, "w") as file:
             json.dump(event2_network_closeness, file, indent=4)
         with open(eigenvector_path, "w") as file:
@@ -459,8 +459,8 @@ def centerity():  # 儲存社群網路資料及btm資料
         degree_path = os.path.join(
             network_path, f"事件三：{startDate3}_{endDate3}_degree.json"
         )
-        betweeness_path = os.path.join(
-            network_path, f"事件三：{startDate3}_{endDate3}_betweeness.json"
+        betweenness_path = os.path.join(
+            network_path, f"事件三：{startDate3}_{endDate3}_betweenness.json"
         )
         closeness_path = os.path.join(
             network_path, f"事件三：{startDate3}_{endDate3}_closeness.json"
@@ -472,20 +472,20 @@ def centerity():  # 儲存社群網路資料及btm資料
         (
             event_scores3,
             event3_network_degree,
-            event3_network_betweeness,
+            event3_network_betweenness,
             event3_network_closeness,
             event3_network_eigenvector,
             result,
             filtered_dataset,
-        ) = centerityScore(data, path)
-        # event_scores3 = centerityScore(data,path)
+        ) = centralityScore(data, path)
+        # event_scores3 = centralityScore(data,path)
 
         if not os.path.exists(path):
             event_scores3.to_csv(path, index=False)
         with open(degree_path, "w") as file:
             json.dump(event3_network_degree, file, indent=4)
-        with open(betweeness_path, "w") as file:
-            json.dump(event3_network_betweeness, file, indent=4)
+        with open(betweenness_path, "w") as file:
+            json.dump(event3_network_betweenness, file, indent=4)
         with open(closeness_path, "w") as file:
             json.dump(event3_network_closeness, file, indent=4)
         with open(eigenvector_path, "w") as file:
@@ -624,7 +624,7 @@ def chartData():
 def result2():
     filename = request.form.get("filename")  # 獲取 filename
     folder = f"{filename}"
-    folder2 = "centerity"
+    folder2 = "centrality"
     full_path = os.path.join(folder, folder2)
 
     files = os.listdir(full_path)  # 獲取目錄下的所有文件
@@ -641,7 +641,7 @@ def get_cendata():
     filename = request.form.get("filename")  # 獲取 filename
     # print(filename)
     folder = f"{filename}"
-    folder2 = "centerity"
+    folder2 = "centrality"
     full_path = os.path.join(folder, folder2)
     files = os.listdir(full_path)  # 獲取目錄下的所有文件
     item = request.form.get("selectedItem")
@@ -853,7 +853,7 @@ def timeline():
     full_path = os.path.join(data_folder, file_name)
     data = pd.read_csv(full_path)
     # 分兩週兩週算中心性分數
-    # centerity_scores = centerityScore(data)
+    # centerity_scores = centralityScore(data)
     data["created_at"] = pd.to_datetime(data["created_at"])
     data["period"] = data["created_at"].dt.to_period("W-SUN")
     groups = data.groupby("period")
@@ -872,7 +872,7 @@ def timeline():
         period["endDate"] = end
         highlightPeriods.append(period)
 
-    folder2 = "centerity"
+    folder2 = "centrality"
     full_path = os.path.join(folder, folder2)
     files = os.listdir(full_path)
     highlightPeriods2 = []
