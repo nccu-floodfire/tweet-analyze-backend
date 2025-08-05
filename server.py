@@ -623,15 +623,16 @@ def chartData():
 @app.route("/result2", methods=["POST"])
 def result2():
     filename = request.form.get("filename")  # 獲取 filename
-    folder = f"{filename}"
-    folder2 = "centrality"
-    full_path = os.path.join(folder, folder2)
+    # 放置資料的資料夾
+    data_folder = "data"
+    folder = f"{filename}/centrality"
+    centrality_path = os.path.join(data_folder, folder)
 
-    files = os.listdir(full_path)  # 獲取目錄下的所有文件
+    files = os.listdir(centrality_path)  # 獲取目錄下的所有文件
 
     result = {}
     for csv_file in files:
-        data = pd.read_csv(os.path.join(full_path, csv_file))  # 讀取 CSV 文件
+        data = pd.read_csv(os.path.join(centrality_path, csv_file))  # 讀取 CSV 文件
         result[csv_file] = data.to_dict()  # 將 DataFrame 轉換為字典並存儲在結果中
     return jsonify({"result": result})
 
@@ -640,16 +641,17 @@ def result2():
 def get_cendata():
     filename = request.form.get("filename")  # 獲取 filename
     # print(filename)
-    folder = f"{filename}"
-    folder2 = "centrality"
-    full_path = os.path.join(folder, folder2)
-    files = os.listdir(full_path)  # 獲取目錄下的所有文件
+    # 放置資料的資料夾
+    data_folder = "data"
+    folder = f"{filename}/centrality"
+    centrality_path = os.path.join(data_folder, folder)
+    files = os.listdir(centrality_path)  # 獲取目錄下的所有文件
     item = request.form.get("selectedItem")
     # print(item)
     data = []
     for file in files:
         # if file.endswith('.csv'):
-        df = pd.read_csv(os.path.join(full_path, file))
+        df = pd.read_csv(os.path.join(centrality_path, file))
         values = df[df["Account"] == item]["betweenness_centrality_Score"].values
         if len(values) > 0:
             centrality = values[0]
@@ -663,16 +665,18 @@ def get_cendata():
 @app.route("/btm_fig", methods=["POST"])
 def btm_fig():
     filename = request.form.get("filename")  # 獲取 filename
-    folder = f"{filename}"
-    folder2 = "btm"
-    folder3 = "topics_coords"
-    full_path = os.path.join(folder, folder2, folder3)
+    # 放置資料的資料夾
+    data_folder = "data"
+    event_folder = f"{filename}"
+    btm_folder = "btm"
+    topic_folder = "topics_coords"
+    btm_fig_path = os.path.join(data_folder, event_folder, btm_folder, topic_folder)
 
-    files = os.listdir(full_path)  # 獲取目錄下的所有文件
+    files = os.listdir(btm_fig_path)  # 獲取目錄下的所有文件
 
     btm_fig = {}
     for csv_file in files:
-        data = pd.read_csv(os.path.join(full_path, csv_file))  # 讀取 CSV 文件
+        data = pd.read_csv(os.path.join(btm_fig_path, csv_file))  # 讀取 CSV 文件
         btm_fig[csv_file] = data.to_dict()  # 將 DataFrame 轉換為字典並存儲在結果中
     return jsonify({"btm_fig": btm_fig})
 
@@ -680,20 +684,22 @@ def btm_fig():
 @app.route("/btm_terms", methods=["POST"])
 def btm_terms():
     filename = request.form.get("filename")  # 獲取 filename
-    folder = f"{filename}"
-    folder2 = "btm"
-    folder3 = "terms_probs"
-    full_path = os.path.join(folder, folder2, folder3)
+    # 放置資料的資料夾
+    data_folder = "data"
+    event_folder = f"{filename}"
+    btm_folder = "btm"
+    terms_folder = "terms_probs"
+    btm_terms_path = os.path.join(data_folder, event_folder, btm_folder, terms_folder)
     topic = request.form.get("selectedBubble")
     # print(topic)
 
-    files = os.listdir(full_path)  # 獲取目錄下的所有文件
+    files = os.listdir(btm_terms_path)  # 獲取目錄下的所有文件
 
     btm_terms = {}
     for csv_file in files:
         if csv_file.endswith(f"{topic}.csv"):
             # print(csv_file)
-            data = pd.read_csv(os.path.join(full_path, csv_file))  # 讀取 CSV 文件
+            data = pd.read_csv(os.path.join(btm_terms_path, csv_file))  # 讀取 CSV 文件
             btm_terms[csv_file] = (
                 data.to_dict()
             )  # 將 DataFrame 轉換為字典並存儲在結果中
@@ -704,17 +710,19 @@ def btm_terms():
 @app.route("/btm_doc", methods=["POST"])
 def btm_doc():
     filename = request.form.get("filename")  # 獲取 filename
-    folder = f"{filename}"
-    folder2 = "btm"
-    folder3 = "top_5_doc"
-    full_path = os.path.join(folder, folder2, folder3)
+    # 放置資料的資料夾
+    data_folder = "data"
+    event_folder = f"{filename}"
+    btm_folder = "btm"
+    top_5_doc_folder = "top_5_doc"
+    btm_doc_path = os.path.join(data_folder, event_folder, btm_folder, top_5_doc_folder)
     topic = request.form.get("selectedBubble")
-    files = os.listdir(full_path)  # 獲取目錄下的所有文件
+    files = os.listdir(btm_doc_path)  # 獲取目錄下的所有文件
 
     top_5_doc = {}
     for csv_file in files:
         if csv_file.endswith(f"{topic}.csv"):
-            data = pd.read_csv(os.path.join(full_path, csv_file))  # 讀取 CSV 文件
+            data = pd.read_csv(os.path.join(btm_doc_path, csv_file))  # 讀取 CSV 文件
             top_5_doc[csv_file] = (
                 data.to_dict()
             )  # 將 DataFrame 轉換為字典並存儲在結果中
