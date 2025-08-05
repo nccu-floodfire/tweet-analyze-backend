@@ -733,22 +733,24 @@ def btm_doc():
 @app.route("/network", methods=["POST"])
 def network_route():
     filename = request.form.get("filename")  # 獲取 filename
-    folder = f"{filename}"
-    folder2 = "network"
-    full_path = os.path.join(folder, folder2)
+    # 放置資料的資料夾
+    data_folder = "data"
+    event_folder = f"{filename}"
+    network_folder = "network"
+    network_path = os.path.join(data_folder, event_folder, network_folder)
     cen_type = request.form.get("cen_type")
     print(cen_type)
     range = request.form.get("selectedFile")
     print(range)
-    files = os.listdir(full_path)
-    # files = os.listdir(full_path)  # 獲取目錄下的所有文件
+    files = os.listdir(network_path)
+    # files = os.listdir(network_path)  # 獲取目錄下的所有文件
 
     # network = {}
     for json_file in files:
         if json_file.endswith(f"{range}_{cen_type}.json"):
-            with open(os.path.join(full_path, json_file)) as f:
+            with open(os.path.join(network_path, json_file)) as f:
                 data = json.load(f)
-            # data = pd.read_json(os.path.join(full_path, json_file))
+            # data = pd.read_json(os.path.join(network_path, json_file))
             # network[json_file] = data.to_dict()  # 將 DataFrame 轉換為字典並存儲在結果中
     # btm_terms = data.to_json()
     return jsonify(data)
@@ -758,10 +760,12 @@ def network_route():
 def stance():
     filename = request.form.get("filename")
     selected_col = request.form.get("selectedFile")
-    folder = f"{filename}"
-    folder2 = "stance"
-    full_path = os.path.join(folder, folder2)
-    data = pd.read_csv(os.path.join(full_path, "Stance.csv"))
+    # 放置資料的資料夾
+    data_folder = "data"
+    event_folder = f"{filename}"
+    stance_folder = "stance"
+    stance_path = os.path.join(data_folder, event_folder, stance_folder)
+    data = pd.read_csv(os.path.join(stance_path, "Stance.csv"))
 
     compare = data.drop("user", axis=1)
     if selected_col not in data.columns:
@@ -802,10 +806,12 @@ def stance():
 @app.route("/check-file", methods=["POST"])
 def check_file():
     filename = request.form.get("filename")
-    folder = f"{filename}"
-    folder2 = "stance"
-    full_path = os.path.join(folder, folder2)
-    full_path = os.path.join(full_path, "Stance.csv")
+    # 放置資料的資料夾
+    data_folder = "data"
+    event_folder = f"{filename}"
+    stance_folder = "stance"
+    stance_path = os.path.join(data_folder, event_folder, stance_folder)
+    full_path = os.path.join(stance_path, "Stance.csv")
     print(full_path)
     file_exists = os.path.exists(full_path)
     print(file_exists)
@@ -818,8 +824,9 @@ def stanceDetail():
     time = request.form.get("time")
     user = request.form.get("user")
     folder = f"{filename}.csv"
-    folder2 = "data"
-    full_path = os.path.join(folder2, folder)
+    # 放置資料的資料夾
+    data_folder = "data"
+    full_path = os.path.join(data_folder, folder)
     #     print(full_path)
     data = pd.read_csv(full_path)
     data = data[data["from_user_name"] == user]
@@ -855,9 +862,9 @@ def timeline():
     filename = request.form.get("filename")  # 獲取 filename
     file_name = f"{filename}.csv"
     # print(filename)
-
-    folder = f"{filename}"
+    # 放置資料的資料夾
     data_folder = "data"
+    event_folder = f"{filename}"
     full_path = os.path.join(data_folder, file_name)
     data = pd.read_csv(full_path)
     # 分兩週兩週算中心性分數
@@ -880,8 +887,8 @@ def timeline():
         period["endDate"] = end
         highlightPeriods.append(period)
 
-    folder2 = "centrality"
-    full_path = os.path.join(folder, folder2)
+    centrality_folder = "centrality"
+    full_path = os.path.join(data_folder, event_folder, centrality_folder)
     files = os.listdir(full_path)
     highlightPeriods2 = []
     for csv_file in files:
