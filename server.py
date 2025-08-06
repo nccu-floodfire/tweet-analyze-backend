@@ -172,8 +172,11 @@ def centerity():  # 儲存社群網路資料及btm資料
     for file in files:
         if file.startswith("2"):
             print(file)
+            # 取得檔案名稱（不含副檔名）作為日期格式
             formatted_date = file.split(".")[0]
+            # 設定中心性分數儲存路徑
             path = os.path.join(centrality_path, f"{formatted_date}.csv")
+            # 設定各種中心性指標的 JSON 儲存路徑
             degree_path = os.path.join(network_path, f"{formatted_date}_degree.json")
             betweenness_path = os.path.join(
                 network_path, f"{formatted_date}_betweenness.json"
@@ -185,7 +188,9 @@ def centerity():  # 儲存社群網路資料及btm資料
                 network_path, f"{formatted_date}_eigenvector.json"
             )
 
+            # 若中心性分數檔案不存在，則進行計算與儲存
             if not os.path.exists(path):
+                # 讀取合併後的週資料
                 combined_dataset = pd.read_csv(os.path.join(data_save_path, file))
                 (
                     score,
@@ -198,8 +203,10 @@ def centerity():  # 儲存社群網路資料及btm資料
                 ) = centralityScore(combined_dataset, path)
                 # score = centralityScore(combined_dataset, path)
 
+                # 儲存中心性分數 CSV
                 if not os.path.exists(path):  # 中心性
                     score.to_csv(path, index=False)
+                # 儲存各種中心性指標 JSON
                 with open(degree_path, "w") as file:
                     json.dump(network_degree, file, indent=4)
                 with open(betweenness_path, "w") as file:
@@ -209,7 +216,7 @@ def centerity():  # 儲存社群網路資料及btm資料
                 with open(eigenvector_path, "w") as file:
                     json.dump(network_eigenvector, file, indent=4)
 
-                # 不同時間點立場
+                # 建立不同時間點的立場 DataFrame
                 temp_df = pd.DataFrame(
                     {
                         "user": result["key"],
@@ -217,11 +224,12 @@ def centerity():  # 儲存社群網路資料及btm資料
                         f"{formatted_date}": result["cluster"],
                     }
                 )
+                # 合併立場資料
                 if Stance.empty:
                     Stance = temp_df
                 else:
                     Stance = pd.merge(Stance, temp_df, on=["user", "name"], how="outer")
-                # btm
+                # btm 主題模型分析並儲存
                 path1 = os.path.join(topics_coords_path, f"{formatted_date}.csv")
                 if not os.path.exists(path1):
                     if dic_file:
@@ -234,18 +242,20 @@ def centerity():  # 儲存社群網路資料及btm資料
                         )
 
                     topics_coords.to_csv(path1, index=False)
+                    # 儲存各主題詞機率
                     for topic, df in terms_probs.items():
                         path2 = os.path.join(
                             terms_probs_path, f"{formatted_date}_{topic}.csv"
                         )
                         df.to_csv(path2, index=False)
+                    # 儲存各主題前五篇文件
                     for topic, df in top_5_doc.items():
                         path3 = os.path.join(
                             top_5_doc_path, f"{formatted_date}_{topic}.csv"
                         )
                         df.to_csv(path3, index=False)
 
-                # 下載立場原始資料
+                # 合併原始立場預測資料
                 if raw_predict_data.empty:
                     raw_predict_data = filtered_dataset
                 else:
@@ -256,6 +266,7 @@ def centerity():  # 儲存社群網路資料及btm資料
                         how="outer",
                         suffixes=("_raw", "_filtered"),
                     )
+                    # 若有 prediction_filtered 欄位則移除並重新命名
                     if "prediction_filtered" in raw_predict_data.columns:
                         raw_predict_data.drop(
                             columns="prediction_filtered", inplace=True
@@ -537,21 +548,26 @@ def centerity():  # 儲存社群網路資料及btm資料
                     columns={"prediction_raw": "prediction"}, inplace=True
                 )
 
+    # 將 Stance DataFrame 中的缺失值填補為 "無資料"
     Stance.fillna("無資料", inplace=True)
+
+    # 依據欄位名稱是否為純數字排序 Stance DataFrame 的欄位
     sorted_columns = sorted(Stance.columns, key=lambda x: (x.isdigit(), x))
     Stance = Stance[sorted_columns]
 
-    stancefolder = "stance"
-    stancepath = os.path.join(data_save_path, stancefolder)
-    if not os.path.exists(stancepath):
-        os.makedirs(stancepath)
-    Stance.to_csv(os.path.join(stancepath, "Stance.csv"), index=False)
+    # 若 stance 資料夾不存在則建立，並將 Stance DataFrame 儲存為 CSV 檔案
+    stance_folder = "stance"
+    stance_path = os.path.join(data_save_path, stance_folder)
+    if not os.path.exists(stance_path):
+        os.makedirs(stance_path)
+    Stance.to_csv(os.path.join(stance_path, "Stance.csv"), index=False)
 
-    downloadfolder = "download"
-    downloadpath = os.path.join(data_save_path, downloadfolder)
-    if not os.path.exists(downloadpath):
-        os.makedirs(downloadpath)
-    raw_predict_data.to_csv(os.path.join(downloadpath, "Download.csv"), index=False)
+    # 若 download 資料夾不存在則建立，並將 raw_predict_data 儲存為 CSV 檔案
+    download_folder = "download"
+    download_path = os.path.join(data_save_path, download_folder)
+    if not os.path.exists(download_path):
+        os.makedirs(download_path)
+    raw_predict_data.to_csv(os.path.join(download_path, "Download.csv"), index=False)
 
     return jsonify({"result": "計算成功"})
 
