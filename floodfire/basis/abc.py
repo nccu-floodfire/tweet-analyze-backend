@@ -1,35 +1,39 @@
 #!/usr/bin/env python3
 
 import logging
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
 
-class BaseLogger(metaclass=ABCMeta):
-    _msg_format = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
-    _date_format = "%Y-%m-%d %H:%M:%S"
-    _logger_name = ""
-    _file_path = ""
+class BaseLogger(ABC):
+    """
+    一個抽象的日誌基底類別，定義了日誌記錄器的基本結構。
+    子類別必須實作 _configure_logger 方法來設定日誌記錄器。
+    """
 
-    @property
-    @abstractmethod
-    def logger_name(self):
-        return self._logger_name
-
-    @logger_name.setter
-    @abstractmethod
-    def logger_name(self, logger_name):
-        self._logger_name = logger_name
-
-    @property
-    @abstractmethod
-    def file_path(self):
-        return self._file_path
-
-    @file_path.setter
-    @abstractmethod
-    def file_path(self, file_path=None):
-        self._file_path = file_path
+    def __init__(self, name, level=logging.INFO):
+        self.logger = logging.getLogger(name)
+        self.logger.setLevel(level)
+        self._configure_logger()
 
     @abstractmethod
-    def log(self, message: str):
+    def _configure_logger(self):
+        """
+        設定日誌記錄器的格式和處理器。
+        子類別必須實作這個方法。
+        """
         pass
+
+    def debug(self, msg, *args, **kwargs):
+        self.logger.debug(msg, *args, **kwargs)
+
+    def info(self, msg, *args, **kwargs):
+        self.logger.info(msg, *args, **kwargs)
+
+    def warning(self, msg, *args, **kwargs):
+        self.logger.warning(msg, *args, **kwargs)
+
+    def error(self, msg, *args, **kwargs):
+        self.logger.error(msg, *args, **kwargs)
+
+    def critical(self, msg, *args, **kwargs):
+        self.logger.critical(msg, *args, **kwargs)
