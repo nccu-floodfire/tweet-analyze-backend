@@ -76,3 +76,27 @@ class BaseLogger(ABC):
 
     def critical(self, msg, *args, **kwargs):
         self.logger.critical(msg, *args, **kwargs)
+
+
+class BaseRDB(ABC):
+    """
+    一個抽象的關聯式資料庫基底類別，定義了資料庫操作的基本結構。
+    子類別必須實作 _connect 和 _disconnect 方法來管理資料庫連線。
+    """
+
+    def __init__(self, dir_path, filename: str):
+        self.db_file = f"{dir_path}/{filename}.db"
+
+    @abstractmethod
+    def _connect(self):
+        """
+        建立資料庫連線。
+        """
+        pass
+
+    @abstractmethod
+    def _disconnect(self):
+        """
+        關閉資料庫連線。
+        """
+        pass
