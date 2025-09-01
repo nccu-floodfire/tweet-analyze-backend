@@ -3,6 +3,7 @@ import json
 import os
 import re
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import pandas as pd
 from flask import Flask, jsonify, request, send_file
@@ -10,17 +11,24 @@ from flask_cors import CORS  # Import CORS from Flask-CORS
 
 from btm import btm_analysis
 from centrality_score import centralityScore
+from floodfire.common.logging import AppLogger
+from floodfire.store.analyze_task import AnalyzeTaskStore
 from network import network
 from statisticCalcu import statisticCalcu
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
+# 初始化 logger
+logger = AppLogger("server", file_path="logs", file_name="server")
+
 
 @app.route("/upload", methods=["POST"])
 def upload():  # 儲存檔案及分週檔案
+    dir_path = Path(__file__).resolve().parent
+    db_folder = "{}/db".format(dir_path)
     file = request.files["file"]
-    #     print(file)
+    logger.logger.info(f"Received file: {file.filename}")
 
     start_date1 = request.form.get("startDate1")  # 獲取開始日期
     end_date1 = request.form.get("endDate1")  # 獲取結束日期
@@ -119,6 +127,20 @@ def upload():  # 儲存檔案及分週檔案
             os.path.join(event_folder, f"事件三：{start_date3}_{end_date3}.csv"),
             index=False,
         )
+
+    task_store = AnalyzeTaskStore(db_folder, "logs/")
+
+    task_data = {
+        "name": new_base_name,
+        "start_date_1": start_date1,
+        "end_date_1": end_date1,
+        "start_date_2": start_date2,
+        "end_date_2": end_date2,
+        "start_date_3": start_date3,
+        "end_date_3": end_date3,
+    }
+
+    task_store.store_new_task(task_data)
 
     return jsonify({"result": "Success!"})
 
@@ -938,4 +960,9 @@ def timeline():
 
 
 if __name__ == "__main__":
+    # 使用 Path 檢查 logs 資料夾有沒有存在，沒有就建立
+    logs_folder = Path("logs")
+    if not logs_folder.exists():
+        logs_folder.mkdir()
+
     app.run(host="0.0.0.0", port=5001, debug=True)

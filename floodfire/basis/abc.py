@@ -84,8 +84,18 @@ class BaseRDB(ABC):
     子類別必須實作 _connect 和 _disconnect 方法來管理資料庫連線。
     """
 
-    def __init__(self, dir_path, filename: str):
-        self.db_file = f"{dir_path}/{filename}.db"
+    def __init__(self, database_name: str):
+        self.database_name = database_name
+
+    @abstractmethod
+    def _setup_logging(self, log_path: str):
+        """
+        設定日誌記錄器。
+
+        Args:
+            log_path (str): 日誌檔案的路徑
+        """
+        pass
 
     @abstractmethod
     def _connect(self):
