@@ -21,3 +21,11 @@ class AnalyzeTaskStore:
             task_data.get("end_date_3", None),
         )
         return self._db.execute_dml(sql, params)
+
+    def get_last_task(self):
+        sql = "SELECT * FROM tasks\
+            WHERE centrality is NULL OR topics_coords IS NULL\
+            OR terms_probs IS NULL OR top_5_doc IS NULL OR network IS NULL\
+            ORDER BY created_at DESC LIMIT 0,1;"
+
+        return self._db.execute_query_show(sql)
