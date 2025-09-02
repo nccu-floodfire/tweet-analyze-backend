@@ -29,6 +29,8 @@ def upload():  # 儲存檔案及分週檔案
     db_folder = "{}/db".format(dir_path)
     file = request.files["file"]
     logger.logger.info(f"Received file: {file.filename}")
+    dic_file = request.files.get("dic_file")
+    logger.logger.info(f"Received dict file: {dic_file.filename}")
 
     start_date1 = request.form.get("startDate1")  # 獲取開始日期
     end_date1 = request.form.get("endDate1")  # 獲取結束日期
@@ -54,6 +56,11 @@ def upload():  # 儲存檔案及分週檔案
         os.makedirs(event_folder)
     #     if os.path.exists(os.path.join(data_folder,new_filename)):
     #         return jsonify({'result': '上傳成功1'})
+
+    # save dic_file to os.path.join(save_folder,dictionary.txt)
+    if dic_file:
+        dic_path = os.path.join(event_folder, "dictionary.txt")
+        dic_file.save(dic_path)
 
     # 讀取剛剛儲存的 CSV 檔案，指定使用的引擎與引號字元以避免解析錯誤
     file = pd.read_csv(
