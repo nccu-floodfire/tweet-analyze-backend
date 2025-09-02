@@ -14,7 +14,7 @@ from floodfire.store.analyze_task import AnalyzeTaskStore
 def centrality_analysis(task):
     logger.info("Starting centrality analysis...")
 
-    Stance = pd.DataFrame()
+    stance = pd.DataFrame()
     raw_predict_data = pd.DataFrame()
 
     files = [f.name for f in Path(task_data_folder).iterdir() if f.is_file()]
@@ -45,12 +45,59 @@ def centrality_analysis(task):
                     }
                 )
                 # 合併立場資料
-                if Stance.empty:
-                    Stance = temp_df
+                if stance.empty:
+                    stance = temp_df
                 else:
-                    Stance = pd.merge(Stance, temp_df, on=["user", "name"], how="outer")
+                    stance = pd.merge(stance, temp_df, on=["user", "name"], how="outer")
                 # btm 主題模型分析並儲存
                 calc_btm_topics(file, combined_dataset)
+
+                # 合併原始立場預測資料
+                if raw_predict_data.empty:
+                    raw_predict_data = filtered_dataset
+                else:
+                    raw_predict_data = pd.merge(
+                        raw_predict_data,
+                        filtered_dataset,
+                        on=["id"],
+                        how="outer",
+                        suffixes=("_raw", "_filtered"),
+                    )
+                    # 若有 prediction_filtered 欄位則移除並重新命名
+                    if "prediction_filtered" in raw_predict_data.columns:
+                        raw_predict_data.drop(
+                            columns="prediction_filtered", inplace=True
+                        )
+                        raw_predict_data.rename(
+                            columns={"prediction_raw": "prediction"}, inplace=True
+                        )
+    # 將 stance DataFrame 中的缺失值填補為 "無資料"
+    stance.fillna("無資料", inplace=True)
+
+    # 依據欄位名稱是否為純數字排序 stance DataFrame 的欄位
+    sorted_columns = sorted(stance.columns, key=lambda x: (x.isdigit(), x))
+    stance = stance[sorted_columns]
+
+    try:
+        # 若 stance 資料夾不存在則建立，並將 stance DataFrame 儲存為 CSV 檔案
+        stance_folder = task_data_folder.joinpath("stance")
+        if not stance_folder.exists():
+            stance_folder.mkdir(parents=True, exist_ok=True)
+        stance_csv_path = stance_folder.joinpath("stance.csv")
+        stance.to_csv(stance_csv_path, index=False)
+        logger.info("Stance CSV file saved.")
+    except Exception as e:
+        logger.error(f"Error saving stance CSV: {e}")
+
+    try:
+        # 若 download 資料夾不存在則建立，並將 raw_predict_data 儲存為 CSV 檔案
+        download_folder = task_data_folder.joinpath("download")
+        if not download_folder.exists():
+            download_folder.mkdir(parents=True, exist_ok=True)
+        raw_predict_data.to_csv(download_folder.joinpath("download.csv"), index=False)
+        logger.info("Download CSV files saved.")
+    except Exception as e:
+        logger.error(f"Error saving download CSV: {e}")
 
 
 def calc_centrality_scores(file, score_csv_path, combined_dataset):
