@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from datetime import datetime
+
 from floodfire.store.sqlite import FloodFireSQLite
 
 
@@ -29,3 +31,9 @@ class AnalyzeTaskStore:
             ORDER BY created_at DESC LIMIT 0,1;"
 
         return self._db.execute_query_show(sql)
+
+    def update_task_phase(self, task_id: int, phase_name: str):
+        now_time = datetime.now()
+        sql = f"UPDATE tasks SET {phase_name} = ? WHERE id = ?;"
+        params = (now_time, task_id)
+        return self._db.execute_dml(sql, params)

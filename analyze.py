@@ -13,6 +13,12 @@ from floodfire.store.analyze_task import AnalyzeTaskStore
 
 
 def centrality_analysis(task):
+    """
+    分析中心性相關的主程式
+
+    Args:
+        task (dict): 任務內容
+    """
     logger.info("Starting centrality analysis...")
 
     stance = pd.DataFrame()
@@ -132,6 +138,16 @@ def centrality_analysis(task):
 
 
 def event_centrality_analysis(event_num, start, end, stance, raw_predict_data):
+    """
+    事件類型的在中心性分析
+
+    Args:
+        event_num (int): 事件編號
+        start (str): 事件開始時間
+        end (str): 事件結束時間
+        stance (DataFrame): 事件立場資料
+        raw_predict_data (DataFrame): 原始預測資料
+    """
     start_date = datetime.strptime(start, "%Y-%m-%d").strftime("%Y%m%d")
     end_date = datetime.strptime(end, "%Y-%m-%d").strftime("%Y%m%d")
 
@@ -181,6 +197,17 @@ def event_centrality_analysis(event_num, start, end, stance, raw_predict_data):
 
 
 def calc_centrality_scores(prefix_filename, score_csv_path, combined_dataset):
+    """
+    計算中心性分數
+
+    Args:
+        prefix_filename (str): 檔案名稱前綴
+        score_csv_path (str): 中心性分數 CSV 檔案路徑
+        combined_dataset (DataFrame): 合併後的資料集
+
+    Returns:
+        _type_: _description_
+    """
     logger.info(f"Calculating centrality scores for [{prefix_filename}]")
     try:
         (
@@ -248,6 +275,13 @@ def save_centrality(
 
 
 def calc_btm_topics(prefix_filename, combined_dataset):
+    """
+    計算 BTM 主題
+
+    Args:
+        prefix_filename (str): 檔案名稱前綴
+        combined_dataset (DataFrame): 合併後的資料集
+    """
     logger.info(f"Calculating BTM topics for [{prefix_filename}]")
     try:
         topics_coords_csv_path = topics_coords_folder.joinpath(
