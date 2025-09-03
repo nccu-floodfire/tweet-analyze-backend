@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import json
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -33,7 +34,7 @@ def centrality_analysis(task):
                 combined_dataset = pd.read_csv(task_data_folder.joinpath(file))
 
                 (result, filtered_dataset) = calc_centrality_scores(
-                    file, score_csv_path, combined_dataset
+                    formatted_date, score_csv_path, combined_dataset
                 )
                 print(result)
                 # 建立不同時間點的立場 DataFrame
@@ -50,7 +51,7 @@ def centrality_analysis(task):
                 else:
                     stance = pd.merge(stance, temp_df, on=["user", "name"], how="outer")
                 # btm 主題模型分析並儲存
-                calc_btm_topics(file, combined_dataset)
+                calc_btm_topics(formatted_date, combined_dataset)
 
                 # 合併原始立場預測資料
                 if raw_predict_data.empty:
@@ -71,6 +72,34 @@ def centrality_analysis(task):
                         raw_predict_data.rename(
                             columns={"prediction_raw": "prediction"}, inplace=True
                         )
+    # 若有設定事件時間範圍則進行事件中心性分析
+    if task["start_date_1"] and task["end_date_1"]:
+        event_centrality_analysis(
+            event_num=1,
+            start=task["start_date_1"],
+            end=task["end_date_1"],
+            stance=stance,
+            raw_predict_data=raw_predict_data,
+        )
+
+    if task["start_date_2"] and task["end_date_2"]:
+        event_centrality_analysis(
+            event_num=1,
+            start=task["start_date_2"],
+            end=task["end_date_2"],
+            stance=stance,
+            raw_predict_data=raw_predict_data,
+        )
+
+    if task["start_date_3"] and task["end_date_3"]:
+        event_centrality_analysis(
+            event_num=1,
+            start=task["start_date_3"],
+            end=task["end_date_3"],
+            stance=stance,
+            raw_predict_data=raw_predict_data,
+        )
+
     # 將 stance DataFrame 中的缺失值填補為 "無資料"
     stance.fillna("無資料", inplace=True)
 
@@ -94,14 +123,65 @@ def centrality_analysis(task):
         download_folder = task_data_folder.joinpath("download")
         if not download_folder.exists():
             download_folder.mkdir(parents=True, exist_ok=True)
-        raw_predict_data.to_csv(download_folder.joinpath("download.csv"), index=False)
-        logger.info("Download CSV files saved.")
+        raw_predict_data.to_csv(
+            download_folder.joinpath("raw_predict_data.csv"), index=False
+        )
+        logger.info("Download raw_predict_data CSV files saved.")
     except Exception as e:
-        logger.error(f"Error saving download CSV: {e}")
+        logger.error(f"Error saving download raw_predict_data CSV: {e}")
 
 
-def calc_centrality_scores(file, score_csv_path, combined_dataset):
-    logger.info(f"Calculating centrality scores for {file}")
+def event_centrality_analysis(event_num, start, end, stance, raw_predict_data):
+    start_date = datetime.strptime(start, "%Y-%m-%d").strftime("%Y%m%d")
+    end_date = datetime.strptime(end, "%Y-%m-%d").strftime("%Y%m%d")
+
+    event_data_file_path = task_data_folder.joinpath(
+        f"event{event_num}-{start_date}_{end_date}.csv"
+    )
+    event_score_csv_path = centrality_folder.joinpath(
+        f"event{event_num}-{start_date}_{end_date}.csv"
+    )
+    (event_result, event_filtered_dataset) = calc_centrality_scores(
+        f"event{event_num}-{start_date}_{end_date}",
+        event_score_csv_path,
+        event_data_file_path,
+    )
+    # 建立不同時間點的立場 DataFrame
+    temp_df = pd.DataFrame(
+        {
+            "user": event_result["key"],
+            "name": event_result["label"],
+            f"event{event_num}-{start_date}_{end_date}": event_result["cluster"],
+        }
+    )
+    if stance.empty:
+        stance = temp_df
+    else:
+        stance = pd.merge(stance, temp_df, on=["user", "name"], how="outer")
+
+    # btm 主題模型分析並儲存
+    calc_btm_topics(f"event{event_num}-{start_date}_{end_date}", event_data_file_path)
+
+    # 下載立場原始資料
+    if raw_predict_data.empty:
+        raw_predict_data = event_filtered_dataset
+    else:
+        raw_predict_data = pd.merge(
+            raw_predict_data,
+            event_filtered_dataset,
+            on=["id"],
+            how="outer",
+            suffixes=("_raw", "_filtered"),
+        )
+        if "prediction_filtered" in raw_predict_data.columns:
+            raw_predict_data.drop(columns="prediction_filtered", inplace=True)
+            raw_predict_data.rename(
+                columns={"prediction_raw": "prediction"}, inplace=True
+            )
+
+
+def calc_centrality_scores(prefix_filename, score_csv_path, combined_dataset):
+    logger.info(f"Calculating centrality scores for [{prefix_filename}]")
     try:
         (
             score,
@@ -114,19 +194,18 @@ def calc_centrality_scores(file, score_csv_path, combined_dataset):
         ) = centralityScore(combined_dataset, score_csv_path)
         # 儲存中心性分數 CSV
         score.to_csv(score_csv_path, index=False)
-        # 取得檔案名稱（不含副檔名）作為日期格式
-        formatted_date = file.split(".")[0]
+
         # 儲存各種中心性指標檔案
         save_centrality(
-            formatted_date,
+            prefix_filename,
             network_degree,
             network_betweenness,
             network_closeness,
             network_eigenvector,
         )
-        logger.info(f"Centrality scores calculated and saved for {file}")
+        logger.info(f"Centrality scores calculated and saved for [{prefix_filename}]")
     except Exception as e:
-        logger.error(f"Error calculating centrality scores: {e}")
+        logger.error(f"Error calculating [{prefix_filename}] centrality scores: {e}")
     return result, filtered_dataset
 
 
@@ -163,18 +242,16 @@ def save_centrality(
         with open(eigenvector_json, "w") as file:
             json.dump(network_eigenvector, file, indent=4)
         # 記錄成功訊息
-        logger.info(f"Centrality JSON files saved for {prefix_name}")
+        logger.info(f"Centrality JSON files saved for [{prefix_name}]")
     except Exception as e:
         logger.error(f"Error saving centrality JSON files: {e}")
 
 
-def calc_btm_topics(file, combined_dataset):
-    logger.info(f"Calculating BTM topics for {file}")
+def calc_btm_topics(prefix_filename, combined_dataset):
+    logger.info(f"Calculating BTM topics for [{prefix_filename}]")
     try:
-        # 取得檔案名稱（不含副檔名）作為日期格式
-        formatted_date = file.split(".")[0]
         topics_coords_csv_path = topics_coords_folder.joinpath(
-            f"{formatted_date}_topics_coords.csv"
+            f"{prefix_filename}_topics_coords.csv"
         )
         dict_file_path = task_data_folder.joinpath("dictionary.txt")
         if not topics_coords_csv_path.exists():
@@ -193,7 +270,7 @@ def calc_btm_topics(file, combined_dataset):
             # 儲存各主題詞機率
             for topic, df in terms_probs.items():
                 terms_probs_csv_path = terms_probs_folder.joinpath(
-                    f"{formatted_date}_{topic}.csv"
+                    f"{prefix_filename}_{topic}.csv"
                 )
                 df.to_csv(terms_probs_csv_path, index=False)
                 logger.info(f"Terms probabilities saved: {terms_probs_csv_path}")
@@ -201,11 +278,11 @@ def calc_btm_topics(file, combined_dataset):
             # 儲存各主題前五篇文件
             for topic, df in top_5_doc.items():
                 top_5_docs_csv_path = top_5_docs_folder.joinpath(
-                    f"{formatted_date}_{topic}.csv"
+                    f"{prefix_filename}_{topic}.csv"
                 )
                 df.to_csv(top_5_docs_csv_path, index=False)
                 logger.info(f"Top 5 documents saved: {top_5_docs_csv_path}")
-        logger.info(f"BTM topics calculated and saved for {file}")
+        logger.info(f"BTM topics calculated and saved for [{prefix_filename}]")
     except Exception as e:
         logger.error(f"Error in calculating BTM analysis: {e}")
         return
