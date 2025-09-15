@@ -11,8 +11,8 @@ class AnalyzeTaskStore:
 
     def store_new_task(self, task_data: dict) -> int:
         sql = "\
-        INSERT INTO tasks (name, start_date_1, end_date_1, start_date_2, end_date_2, start_date_3, end_date_3)\
-        VALUES (?, ?, ?, ?, ?, ?, ?);"
+        INSERT INTO tasks (name, start_date_1, end_date_1, start_date_2, end_date_2, start_date_3, end_date_3, datasets_list_len)\
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?);"
         params = (
             task_data["name"],
             task_data.get("start_date_1", None),
@@ -21,6 +21,7 @@ class AnalyzeTaskStore:
             task_data.get("end_date_2", None),
             task_data.get("start_date_3", None),
             task_data.get("end_date_3", None),
+            task_data.get("datasets_list_len", None),
         )
         return self._db.execute_dml(sql, params)
 
@@ -33,7 +34,7 @@ class AnalyzeTaskStore:
         return self._db.execute_query_show(sql)
 
     def update_task_phase(self, task_id: int, phase_name: str):
-        now_time = datetime.now()
-        sql = f"UPDATE tasks SET {phase_name} = ? WHERE id = ?;"
-        params = (now_time, task_id)
+        # now_time = datetime.now()
+        sql = f"UPDATE tasks SET {phase_name} = {phase_name} + 1 WHERE id = ?;"
+        params = (task_id,)
         return self._db.execute_dml(sql, params)

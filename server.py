@@ -30,7 +30,6 @@ def upload():  # 儲存檔案及分週檔案
     file = request.files["file"]
     logger.logger.info(f"Received file: {file.filename}")
     dic_file = request.files.get("dic_file")
-    logger.logger.info(f"Received dict file: {dic_file.filename}")
 
     start_date1 = request.form.get("startDate1")  # 獲取開始日期
     end_date1 = request.form.get("endDate1")  # 獲取結束日期
@@ -59,6 +58,7 @@ def upload():  # 儲存檔案及分週檔案
 
     # save dic_file to os.path.join(save_folder,dictionary.txt)
     if dic_file:
+        logger.logger.info(f"Received dict file: {dic_file.filename}")
         dic_path = os.path.join(event_folder, "dictionary.txt")
         dic_file.save(dic_path)
 
@@ -145,6 +145,7 @@ def upload():  # 儲存檔案及分週檔案
         "end_date_2": end_date2,
         "start_date_3": start_date3,
         "end_date_3": end_date3,
+        "datasets_list_len": len(datasets_list),
     }
 
     task_store.store_new_task(task_data)
