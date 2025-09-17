@@ -250,21 +250,21 @@ def calc_centrality_scores(prefix_filename, score_csv_path, combined_dataset):
 
 
 def save_centrality_json(
-    prefix_name,
-    network_degree,
-    network_betweenness,
-    network_closeness,
-    network_eigenvector,
+    prefix_name: str,
+    network_degree: dict,
+    network_betweenness: dict,
+    network_closeness: dict,
+    network_eigenvector: dict,
 ):
     """
     儲存各種中心性指標
 
     Args:
         prefix_name (string): 檔案名稱前綴
-        network_degree (DataFrame): 節點的度數中心性
-        network_betweenness (DataFrame): 節點的介數中心性
-        network_closeness (DataFrame): 節點的接近中心性
-        network_eigenvector (DataFrame): 節點的特徵向量中心性
+        network_degree (Dict): 節點的度數中心性
+        network_betweenness (Dict): 節點的介數中心性
+        network_closeness (Dict): 節點的接近中心性
+        network_eigenvector (Dict): 節點的特徵向量中心性
     """
     try:
         # 儲存各種中心性指標的 JSON 檔案
@@ -290,79 +290,132 @@ def save_centrality_json(
 
 
 def save_centrality_csv(
-    prefix_name,
-    network_degree,
-    network_betweenness,
-    network_closeness,
-    network_eigenvector,
+    prefix_name: str,
+    network_degree: dict,
+    network_betweenness: dict,
+    network_closeness: dict,
+    network_eigenvector: dict,
 ):
     """
     儲存各種中心性指標 csv 檔案
 
     Args:
         prefix_name (string): 檔案名稱前綴
-        network_degree (DataFrame): 節點的度數中心性
-        network_betweenness (DataFrame): 節點的介數中心性
-        network_closeness (DataFrame): 節點的接近中心性
-        network_eigenvector (DataFrame): 節點的特徵向量中心性
+        network_degree (Dict): 節點的度數中心性
+        network_betweenness (Dict): 節點的介數中心性
+        network_closeness (Dict): 節點的接近中心性
+        network_eigenvector (Dict): 節點的特徵向量中心性
     """
     try:
         # 儲存各種中心性指標的 csv 檔案
         download_folder = task_data_folder.joinpath("download")
-        degree_csv = download_folder.joinpath(f"{prefix_name}_degree.csv")
-        betweenness_csv = download_folder.joinpath(f"{prefix_name}_betweenness.csv")
-        closeness_csv = download_folder.joinpath(f"{prefix_name}_closeness.csv")
-        eigenvector_csv = download_folder.joinpath(f"{prefix_name}_eigenvector.csv")
+        degree_nodes_csv = download_folder.joinpath(f"{prefix_name}_degree_nodes.csv")
+        degree_edges_csv = download_folder.joinpath(f"{prefix_name}_degree_edges.csv")
+        betweenness_nodes_csv = download_folder.joinpath(f"{prefix_name}_betweenness_nodes.csv")
+        betweenness_edges_csv = download_folder.joinpath(f"{prefix_name}_betweenness_edges.csv")
+        closeness_nodes_csv = download_folder.joinpath(f"{prefix_name}_closeness_nodes.csv")
+        closeness_edges_csv = download_folder.joinpath(f"{prefix_name}_closeness_edges.csv")
+        eigenvector_nodes_csv = download_folder.joinpath(f"{prefix_name}_eigenvector_nodes.csv")
+        eigenvector_edges_csv = download_folder.joinpath(f"{prefix_name}_eigenvector_edges.csv")
 
-        fieldnames = ["id", "label", "tag", "cluster", "score"]
+        node_fieldnames = ["id", "label", "tag", "cluster", "score"]
+        edge_fieldnames = ["source", "target", "type"]
 
-        # 轉換 network degree node 的 key 名稱
-        network_degree_nodes = transform_gephi_node(network_degree["nodes"])
-        with open(degree_csv, "w", newline="") as csv_file:
+        # 轉換 network degree node 的 key 名稱給 Gephi 使用
+        network_degree_nodes = transform_gephi_nodes(network_degree["nodes"])
+        with open(degree_nodes_csv, "w", newline="") as csv_file:
             # Create a DictWriter object
             writer = csv.DictWriter(
-                csv_file, fieldnames=fieldnames, extrasaction="ignore"
+                csv_file, fieldnames=node_fieldnames, extrasaction="ignore"
             )
             # Write the header row
             writer.writeheader()
             # Write the data rows
             writer.writerows(network_degree_nodes)
 
-        # 轉換 network betweenness node 的 key 名稱
-        network_betweenness_nodes = transform_gephi_node(network_betweenness["nodes"])
-        with open(betweenness_csv, "w", newline="") as csv_file:
+        # 轉換 network degree edge 的 key 名稱給 Gephi 使用
+        network_degree_edges = transform_gephi_edges(network_degree["edges"])
+        with open(degree_edges_csv, "w", newline="") as csv_file:
             # Create a DictWriter object
             writer = csv.DictWriter(
-                csv_file, fieldnames=fieldnames, extrasaction="ignore"
+                csv_file, fieldnames=edge_fieldnames, extrasaction="ignore"
+            )
+            # Write the header row
+            writer.writeheader()
+            # Write the data rows
+            writer.writerows(network_degree_edges)
+
+        # 轉換 network betweenness node 的 key 名稱給 Gephi 使用
+        network_betweenness_nodes = transform_gephi_nodes(network_betweenness["nodes"])
+        with open(betweenness_nodes_csv, "w", newline="") as csv_file:
+            # Create a DictWriter object
+            writer = csv.DictWriter(
+                csv_file, fieldnames=node_fieldnames, extrasaction="ignore"
             )
             # Write the header row
             writer.writeheader()
             # Write the data rows
             writer.writerows(network_betweenness_nodes)
 
-        # 轉換 network closeness node 的 key 名稱
-        network_closeness_nodes = transform_gephi_node(network_closeness["nodes"])
-        with open(closeness_csv, "w", newline="") as csv_file:
+        # 轉換 network betweenness edge 的 key 名稱給 Gephi 使用
+        network_betweenness_edges = transform_gephi_edges(network_betweenness["edges"])
+        with open(betweenness_edges_csv, "w", newline="") as csv_file:
             # Create a DictWriter object
             writer = csv.DictWriter(
-                csv_file, fieldnames=fieldnames, extrasaction="ignore"
+                csv_file, fieldnames=edge_fieldnames, extrasaction="ignore"
+            )
+            # Write the header row
+            writer.writeheader()
+            # Write the data rows
+            writer.writerows(network_betweenness_edges)
+
+        # 轉換 network closeness node 的 key 名稱給 Gephi 使用
+        network_closeness_nodes = transform_gephi_nodes(network_closeness["nodes"])
+        with open(closeness_nodes_csv, "w", newline="") as csv_file:
+            # Create a DictWriter object
+            writer = csv.DictWriter(
+                csv_file, fieldnames=node_fieldnames, extrasaction="ignore"
             )
             # Write the header row
             writer.writeheader()
             # Write the data rows
             writer.writerows(network_closeness_nodes)
 
-        # 轉換 network eigenvector node 的 key 名稱
-        network_eigenvector_nodes = transform_gephi_node(network_eigenvector["nodes"])
-        with open(eigenvector_csv, "w", newline="") as csv_file:
+        # 轉換 network closeness edge 的 key 名稱給 Gephi 使用
+        network_closeness_edges = transform_gephi_edges(network_closeness["edges"])
+        with open(closeness_edges_csv, "w", newline="") as csv_file:
             # Create a DictWriter object
             writer = csv.DictWriter(
-                csv_file, fieldnames=fieldnames, extrasaction="ignore"
+                csv_file, fieldnames=edge_fieldnames, extrasaction="ignore"
+            )
+            # Write the header row
+            writer.writeheader()
+            # Write the data rows
+            writer.writerows(network_closeness_edges)
+
+        # 轉換 network eigenvector node 的 key 名稱給 Gephi 使用
+        network_eigenvector_nodes = transform_gephi_nodes(network_eigenvector["nodes"])
+        with open(eigenvector_nodes_csv, "w", newline="") as csv_file:
+            # Create a DictWriter object
+            writer = csv.DictWriter(
+                csv_file, fieldnames=node_fieldnames, extrasaction="ignore"
             )
             # Write the header row
             writer.writeheader()
             # Write the data rows
             writer.writerows(network_eigenvector_nodes)
+
+        # 轉換 network eigenvector edge 的 key 名稱給 Gephi 使用
+        network_eigenvector_edges = transform_gephi_edges(network_eigenvector["edges"])
+        with open(eigenvector_edges_csv, "w", newline="") as csv_file:
+            # Create a DictWriter object
+            writer = csv.DictWriter(
+                csv_file, fieldnames=edge_fieldnames, extrasaction="ignore"
+            )
+            # Write the header row
+            writer.writeheader()
+            # Write the data rows
+            writer.writerows(network_eigenvector_edges)
 
         # 記錄成功訊息
         logger.info(f"Centrality CSV files saved for [{prefix_name}]")
@@ -370,7 +423,7 @@ def save_centrality_csv(
         logger.error(f"Error saving centrality CSV files: {e}")
 
 
-def transform_gephi_node(nodes):
+def transform_gephi_nodes(nodes):
     transformed_data = []
     for node in nodes:
         transformed_node = {
@@ -383,6 +436,16 @@ def transform_gephi_node(nodes):
         transformed_data.append(transformed_node)
     return transformed_data
 
+def transform_gephi_edges(edges):
+    transformed_data = []
+    for edge in edges:
+        transformed_edge = {
+            "source": edge[0],
+            "target": edge[1],
+            "type": "Directed",
+        }
+        transformed_data.append(transformed_edge)
+    return transformed_data
 
 def calc_btm_topics(prefix_filename, combined_dataset):
     """
