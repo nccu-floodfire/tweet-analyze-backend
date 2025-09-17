@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import csv
 import json
 from datetime import datetime
 from pathlib import Path
@@ -42,6 +43,7 @@ def centrality_analysis(task):
                 (result, filtered_dataset) = calc_centrality_scores(
                     formatted_date, score_csv_path, combined_dataset
                 )
+
                 print(result)
                 # 建立不同時間點的立場 DataFrame
                 temp_df = pd.DataFrame(
@@ -219,11 +221,22 @@ def calc_centrality_scores(prefix_filename, score_csv_path, combined_dataset):
             result,
             filtered_dataset,
         ) = centralityScore(combined_dataset, score_csv_path)
+
         # 儲存中心性分數 CSV
         score.to_csv(score_csv_path, index=False)
+        # 更新任務階段為中心性計算完成
+        task_store.update_task_phase(task["id"], "centrality")
 
         # 儲存各種中心性指標檔案
-        save_centrality(
+        save_centrality_json(
+            prefix_filename,
+            network_degree,
+            network_betweenness,
+            network_closeness,
+            network_eigenvector,
+        )
+
+        save_centrality_csv(
             prefix_filename,
             network_degree,
             network_betweenness,
@@ -236,7 +249,7 @@ def calc_centrality_scores(prefix_filename, score_csv_path, combined_dataset):
     return result, filtered_dataset
 
 
-def save_centrality(
+def save_centrality_json(
     prefix_name,
     network_degree,
     network_betweenness,
@@ -270,8 +283,105 @@ def save_centrality(
             json.dump(network_eigenvector, file, indent=4)
         # 記錄成功訊息
         logger.info(f"Centrality JSON files saved for [{prefix_name}]")
+        # 更新任務階段為網路分析完成
+        task_store.update_task_phase(task["id"], "network")
     except Exception as e:
         logger.error(f"Error saving centrality JSON files: {e}")
+
+
+def save_centrality_csv(
+    prefix_name,
+    network_degree,
+    network_betweenness,
+    network_closeness,
+    network_eigenvector,
+):
+    """
+    儲存各種中心性指標 csv 檔案
+
+    Args:
+        prefix_name (string): 檔案名稱前綴
+        network_degree (DataFrame): 節點的度數中心性
+        network_betweenness (DataFrame): 節點的介數中心性
+        network_closeness (DataFrame): 節點的接近中心性
+        network_eigenvector (DataFrame): 節點的特徵向量中心性
+    """
+    try:
+        # 儲存各種中心性指標的 csv 檔案
+        download_folder = task_data_folder.joinpath("download")
+        degree_csv = download_folder.joinpath(f"{prefix_name}_degree.csv")
+        betweenness_csv = download_folder.joinpath(f"{prefix_name}_betweenness.csv")
+        closeness_csv = download_folder.joinpath(f"{prefix_name}_closeness.csv")
+        eigenvector_csv = download_folder.joinpath(f"{prefix_name}_eigenvector.csv")
+
+        fieldnames = ["id", "label", "tag", "cluster", "score"]
+
+        # 轉換 network degree node 的 key 名稱
+        network_degree_nodes = transform_gephi_node(network_degree["nodes"])
+        with open(degree_csv, "w", newline="") as csv_file:
+            # Create a DictWriter object
+            writer = csv.DictWriter(
+                csv_file, fieldnames=fieldnames, extrasaction="ignore"
+            )
+            # Write the header row
+            writer.writeheader()
+            # Write the data rows
+            writer.writerows(network_degree_nodes)
+
+        # 轉換 network betweenness node 的 key 名稱
+        network_betweenness_nodes = transform_gephi_node(network_betweenness["nodes"])
+        with open(betweenness_csv, "w", newline="") as csv_file:
+            # Create a DictWriter object
+            writer = csv.DictWriter(
+                csv_file, fieldnames=fieldnames, extrasaction="ignore"
+            )
+            # Write the header row
+            writer.writeheader()
+            # Write the data rows
+            writer.writerows(network_betweenness_nodes)
+
+        # 轉換 network closeness node 的 key 名稱
+        network_closeness_nodes = transform_gephi_node(network_closeness["nodes"])
+        with open(closeness_csv, "w", newline="") as csv_file:
+            # Create a DictWriter object
+            writer = csv.DictWriter(
+                csv_file, fieldnames=fieldnames, extrasaction="ignore"
+            )
+            # Write the header row
+            writer.writeheader()
+            # Write the data rows
+            writer.writerows(network_closeness_nodes)
+
+        # 轉換 network eigenvector node 的 key 名稱
+        network_eigenvector_nodes = transform_gephi_node(network_eigenvector["nodes"])
+        with open(eigenvector_csv, "w", newline="") as csv_file:
+            # Create a DictWriter object
+            writer = csv.DictWriter(
+                csv_file, fieldnames=fieldnames, extrasaction="ignore"
+            )
+            # Write the header row
+            writer.writeheader()
+            # Write the data rows
+            writer.writerows(network_eigenvector_nodes)
+
+        # 記錄成功訊息
+        logger.info(f"Centrality CSV files saved for [{prefix_name}]")
+    except Exception as e:
+        logger.error(f"Error saving centrality CSV files: {e}")
+
+
+def transform_gephi_node(nodes):
+    transformed_data = []
+    for node in nodes:
+        transformed_node = {
+            "id": node["key"],
+            "label": node["label"],
+            "tag": node["tag"],
+            "cluster": node["cluster"],
+            "score": node["score"],
+        }
+        transformed_data.append(transformed_node)
+    return transformed_data
 
 
 def calc_btm_topics(prefix_filename, combined_dataset):
@@ -301,6 +411,9 @@ def calc_btm_topics(prefix_filename, combined_dataset):
             # 儲存 BTM 分析結果
             topics_coords.to_csv(topics_coords_csv_path, index=False)
             logger.info(f"BTM topics coords saved: {topics_coords_csv_path}")
+            # 更新任務階段為主題模型完成
+            task_store.update_task_phase(task["id"], "topics_coords")
+
             # 儲存各主題詞機率
             for topic, df in terms_probs.items():
                 terms_probs_csv_path = terms_probs_folder.joinpath(
@@ -308,6 +421,8 @@ def calc_btm_topics(prefix_filename, combined_dataset):
                 )
                 df.to_csv(terms_probs_csv_path, index=False)
                 logger.info(f"Terms probabilities saved: {terms_probs_csv_path}")
+            # 更新任務階段為主題詞機率完成
+            task_store.update_task_phase(task["id"], "terms_probs")
 
             # 儲存各主題前五篇文件
             for topic, df in top_5_doc.items():
@@ -316,6 +431,9 @@ def calc_btm_topics(prefix_filename, combined_dataset):
                 )
                 df.to_csv(top_5_docs_csv_path, index=False)
                 logger.info(f"Top 5 documents saved: {top_5_docs_csv_path}")
+            # 更新任務階段為前五篇文件完成
+            task_store.update_task_phase(task["id"], "top_5_doc")
+
         logger.info(f"BTM topics calculated and saved for [{prefix_filename}]")
     except Exception as e:
         logger.error(f"Error in calculating BTM analysis: {e}")
@@ -343,7 +461,7 @@ if __name__ == "__main__":
     # 建立分析所需的資料夾
     logger.info("Creating analysis folders...")
     # Create the main data folder if it doesn't exist
-    task_data_folder = Path("data/{}".format(task["name"]))
+    task_data_folder = Path("{}/data/{}".format(dir_path, task["name"]))
     if not task_data_folder.exists():
         task_data_folder.mkdir(parents=True)
 
@@ -371,4 +489,9 @@ if __name__ == "__main__":
     network_folder = task_data_folder.joinpath("network")
     if not network_folder.exists():
         network_folder.mkdir(parents=True, exist_ok=True)
+    # Create download folder if it doesn't exist
+    download_folder = task_data_folder.joinpath("download")
+    if not download_folder.exists():
+        download_folder.mkdir(parents=True, exist_ok=True)
+
     centrality_analysis(task)

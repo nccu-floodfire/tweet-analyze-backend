@@ -27,8 +27,8 @@ class AnalyzeTaskStore:
 
     def get_last_task(self):
         sql = "SELECT * FROM tasks\
-            WHERE centrality is NULL OR topics_coords IS NULL\
-            OR terms_probs IS NULL OR top_5_doc IS NULL OR network IS NULL\
+            WHERE centrality = 0 OR topics_coords = 0\
+            OR terms_probs = 0 OR top_5_doc = 0 OR network = 0\
             ORDER BY created_at DESC LIMIT 0,1;"
 
         return self._db.execute_query_show(sql)

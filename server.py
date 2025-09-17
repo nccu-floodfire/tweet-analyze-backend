@@ -145,7 +145,7 @@ def upload():  # 儲存檔案及分週檔案
         "end_date_2": end_date2,
         "start_date_3": start_date3,
         "end_date_3": end_date3,
-        "datasets_list_len": len(datasets_list),
+        "datasets_list_len": len(datasets_list) - 1,
     }
 
     task_store.store_new_task(task_data)
