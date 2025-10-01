@@ -2,6 +2,7 @@
 
 import csv
 import json
+import zipfile
 from datetime import datetime
 from pathlib import Path
 
@@ -309,14 +310,31 @@ def save_centrality_csv(
     try:
         # 儲存各種中心性指標的 csv 檔案
         download_folder = task_data_folder.joinpath("download")
-        degree_nodes_csv = download_folder.joinpath(f"{prefix_name}_degree_nodes.csv")
-        degree_edges_csv = download_folder.joinpath(f"{prefix_name}_degree_edges.csv")
-        betweenness_nodes_csv = download_folder.joinpath(f"{prefix_name}_betweenness_nodes.csv")
-        betweenness_edges_csv = download_folder.joinpath(f"{prefix_name}_betweenness_edges.csv")
-        closeness_nodes_csv = download_folder.joinpath(f"{prefix_name}_closeness_nodes.csv")
-        closeness_edges_csv = download_folder.joinpath(f"{prefix_name}_closeness_edges.csv")
-        eigenvector_nodes_csv = download_folder.joinpath(f"{prefix_name}_eigenvector_nodes.csv")
-        eigenvector_edges_csv = download_folder.joinpath(f"{prefix_name}_eigenvector_edges.csv")
+        # Gephi 匯出資料夾，若不存在則建立
+        gephi_folder = download_folder.joinpath("gephi")
+        if not gephi_folder.exists():
+            gephi_folder.mkdir(parents=True, exist_ok=True)
+
+        degree_nodes_csv = gephi_folder.joinpath(f"{prefix_name}_degree_nodes.csv")
+        degree_edges_csv = gephi_folder.joinpath(f"{prefix_name}_degree_edges.csv")
+        betweenness_nodes_csv = gephi_folder.joinpath(
+            f"{prefix_name}_betweenness_nodes.csv"
+        )
+        betweenness_edges_csv = gephi_folder.joinpath(
+            f"{prefix_name}_betweenness_edges.csv"
+        )
+        closeness_nodes_csv = gephi_folder.joinpath(
+            f"{prefix_name}_closeness_nodes.csv"
+        )
+        closeness_edges_csv = gephi_folder.joinpath(
+            f"{prefix_name}_closeness_edges.csv"
+        )
+        eigenvector_nodes_csv = gephi_folder.joinpath(
+            f"{prefix_name}_eigenvector_nodes.csv"
+        )
+        eigenvector_edges_csv = gephi_folder.joinpath(
+            f"{prefix_name}_eigenvector_edges.csv"
+        )
 
         node_fieldnames = ["id", "label", "tag", "cluster", "score"]
         edge_fieldnames = ["source", "target", "type"]
@@ -417,10 +435,35 @@ def save_centrality_csv(
             # Write the data rows
             writer.writerows(network_eigenvector_edges)
 
+        zip_gephi_files(download_folder)
+
         # 記錄成功訊息
         logger.info(f"Centrality CSV files saved for [{prefix_name}]")
     except Exception as e:
         logger.error(f"Error saving centrality CSV files: {e}")
+
+
+def zip_gephi_files(download_folder: Path):
+    """
+    將 download 的 gephi 資料夾壓縮成 zip 壓縮檔
+
+    Args:
+        download_folder (Path): Gephi 資料夾路徑
+    """
+    try:
+        gephi_folder = download_folder.joinpath("gephi")
+        zip_filename = download_folder.joinpath("for-gephi.zip")
+
+        if gephi_folder.exists() and gephi_folder.is_dir():
+            with zipfile.ZipFile(zip_filename, "w", zipfile.ZIP_DEFLATED) as my_zip:
+                for file_path in gephi_folder.iterdir():
+                    if file_path.is_file():
+                        # 將檔案加入 zip，arcname 只保留檔名
+                        my_zip.write(file_path, arcname=file_path.name)
+
+            logger.info(f"Gephi files zipped: {zip_filename}")
+    except Exception as e:
+        logger.error(f"Error zipping Gephi files: {e}")
 
 
 def transform_gephi_nodes(nodes):
@@ -436,6 +479,7 @@ def transform_gephi_nodes(nodes):
         transformed_data.append(transformed_node)
     return transformed_data
 
+
 def transform_gephi_edges(edges):
     transformed_data = []
     for edge in edges:
@@ -446,6 +490,7 @@ def transform_gephi_edges(edges):
         }
         transformed_data.append(transformed_edge)
     return transformed_data
+
 
 def calc_btm_topics(prefix_filename, combined_dataset):
     """
