@@ -1,5 +1,7 @@
 # Custom Dictionary Words
+arcname
 betweenness
+extrasaction
 floodfire
 gephi
 jsonify

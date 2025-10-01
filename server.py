@@ -614,21 +614,32 @@ def download():
 
     return csv
 
+
 # 新增一個下載的 api: download-files/<filename>
-@app.route("/download-files/<filename>", methods=["GET"])
-def download_files(filename):
-    folder = f"{filename}"
-    folder2 = "download"
-    full_path = os.path.join("data", folder, folder2, "Download.csv")
-    if os.path.exists(full_path):
-        return send_file(
-            full_path,
-            as_attachment=True,
-            download_name="Download.csv",
-            mimetype="text/csv",
-        )
+@app.route("/download-files/<task_id>/<filename>", methods=["GET"])
+def download_files(task_id, filename):
+    dir_path = Path(__file__).resolve().parent
+    db_folder = "{}/db".format(dir_path)
+    task_store = AnalyzeTaskStore(db_folder, "logs/")
+    task = task_store.get_task_by_id(task_id)
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
+
+    task_data_folder = Path("{}/data/{}".format(dir_path, task["name"]))
+    download_folder = task_data_folder.joinpath("download")
+    if not download_folder.exists():
+        return jsonify({"error": "Download folder not found"}), 404
     else:
-        return jsonify({"error": "檔案不存在"}), 404
+        full_path = download_folder.joinpath(filename)
+        if full_path.is_file():
+            return send_file(
+                full_path,
+                as_attachment=True,
+                download_name=filename,
+            )
+        else:
+            return jsonify({"error": "檔案不存在"}), 404
+
 
 # 新增一個列出 sqlite 目前所有 task 的 api: tasks/
 @app.route("/tasks", methods=["GET"])
@@ -638,6 +649,7 @@ def list_tasks():
     task_store = AnalyzeTaskStore(db_folder, "logs/")
     tasks = task_store.get_all_tasks()
     return jsonify(tasks)
+
 
 # 新增一個下載列表的 api: download-list/
 # 列出指定 download 資料夾下的所有檔案名稱及大小
@@ -659,7 +671,9 @@ def download_list(task_id):
     if not download_folder.exists():
         return jsonify({"error": "Download folder not found"}), 404
 
-    #只要列出檔案名稱就好
+    # return jsonify({"task_data_folder": str(download_folder)})
+
+    # 只要列出檔案名稱就好
     for file in download_folder.iterdir():
         file_path = download_folder.joinpath(file)
         if file_path.is_file():
@@ -667,7 +681,7 @@ def download_list(task_id):
 
             download_files.append(
                 {
-                    "filename": file,
+                    "filename": file.name,
                     "size_kb": round(file_stats.st_size / 1024, 2),
                 }
             )
