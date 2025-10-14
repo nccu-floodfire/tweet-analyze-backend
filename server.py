@@ -3,6 +3,7 @@ import json
 import os
 import re
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import pandas as pd
 from flask import Flask, jsonify, request, send_file
@@ -10,17 +11,25 @@ from flask_cors import CORS  # Import CORS from Flask-CORS
 
 from btm import btm_analysis
 from centrality_score import centralityScore
+from floodfire.common.logging import AppLogger
+from floodfire.store.analyze_task import AnalyzeTaskStore
 from network import network
 from statisticCalcu import statisticCalcu
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
+# 初始化 logger
+logger = AppLogger("server", file_path="logs", file_name="server")
+
 
 @app.route("/upload", methods=["POST"])
 def upload():  # 儲存檔案及分週檔案
+    dir_path = Path(__file__).resolve().parent
+    db_folder = "{}/db".format(dir_path)
     file = request.files["file"]
-    #     print(file)
+    logger.logger.info(f"Received file: {file.filename}")
+    dic_file = request.files.get("dic_file")
 
     start_date1 = request.form.get("startDate1")  # 獲取開始日期
     end_date1 = request.form.get("endDate1")  # 獲取結束日期
@@ -46,6 +55,12 @@ def upload():  # 儲存檔案及分週檔案
         os.makedirs(event_folder)
     #     if os.path.exists(os.path.join(data_folder,new_filename)):
     #         return jsonify({'result': '上傳成功1'})
+
+    # save dic_file to os.path.join(save_folder,dictionary.txt)
+    if dic_file:
+        logger.logger.info(f"Received dict file: {dic_file.filename}")
+        dic_path = os.path.join(event_folder, "dictionary.txt")
+        dic_file.save(dic_path)
 
     # 讀取剛剛儲存的 CSV 檔案，指定使用的引擎與引號字元以避免解析錯誤
     file = pd.read_csv(
@@ -119,6 +134,21 @@ def upload():  # 儲存檔案及分週檔案
             os.path.join(event_folder, f"事件三：{start_date3}_{end_date3}.csv"),
             index=False,
         )
+
+    task_store = AnalyzeTaskStore(db_folder, "logs/")
+
+    task_data = {
+        "name": new_base_name,
+        "start_date_1": start_date1,
+        "end_date_1": end_date1,
+        "start_date_2": start_date2,
+        "end_date_2": end_date2,
+        "start_date_3": start_date3,
+        "end_date_3": end_date3,
+        "datasets_list_len": len(datasets_list) - 1,
+    }
+
+    task_store.store_new_task(task_data)
 
     return jsonify({"result": "Success!"})
 
@@ -585,6 +615,79 @@ def download():
     return csv
 
 
+# 新增一個下載的 api: download-files/<filename>
+@app.route("/download-files/<task_id>/<filename>", methods=["GET"])
+def download_files(task_id, filename):
+    dir_path = Path(__file__).resolve().parent
+    db_folder = "{}/db".format(dir_path)
+    task_store = AnalyzeTaskStore(db_folder, "logs/")
+    task = task_store.get_task_by_id(task_id)
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
+
+    task_data_folder = Path("{}/data/{}".format(dir_path, task["name"]))
+    download_folder = task_data_folder.joinpath("download")
+    if not download_folder.exists():
+        return jsonify({"error": "Download folder not found"}), 404
+    else:
+        full_path = download_folder.joinpath(filename)
+        if full_path.is_file():
+            return send_file(
+                full_path,
+                as_attachment=True,
+                download_name=filename,
+            )
+        else:
+            return jsonify({"error": "檔案不存在"}), 404
+
+
+# 新增一個列出 sqlite 目前所有 task 的 api: tasks/
+@app.route("/tasks", methods=["GET"])
+def list_tasks():
+    dir_path = Path(__file__).resolve().parent
+    db_folder = "{}/db".format(dir_path)
+    task_store = AnalyzeTaskStore(db_folder, "logs/")
+    tasks = task_store.get_all_tasks()
+    return jsonify(tasks)
+
+
+# 新增一個下載列表的 api: download-list/
+# 列出指定 download 資料夾下的所有檔案名稱及大小
+@app.route("/download-list/<task_id>", methods=["GET"])
+def download_list(task_id):
+    dir_path = Path(__file__).resolve().parent
+    db_folder = "{}/db".format(dir_path)
+    task_store = AnalyzeTaskStore(db_folder, "logs/")
+    task = task_store.get_task_by_id(task_id)
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
+
+    # Create the main data folder if it doesn't exist
+    task_data_folder = Path("{}/data/{}".format(dir_path, task["name"]))
+
+    download_files = []
+
+    download_folder = task_data_folder.joinpath("download")
+    if not download_folder.exists():
+        return jsonify({"error": "Download folder not found"}), 404
+
+    # return jsonify({"task_data_folder": str(download_folder)})
+
+    # 只要列出檔案名稱就好
+    for file in download_folder.iterdir():
+        file_path = download_folder.joinpath(file)
+        if file_path.is_file():
+            file_stats = file_path.stat()
+
+            download_files.append(
+                {
+                    "filename": file.name,
+                    "size_kb": round(file_stats.st_size / 1024, 2),
+                }
+            )
+    return jsonify(download_files)
+
+
 @app.route("/get_file", methods=["POST"])
 def get_file():
     csv_files = glob.glob("data/*.csv")
@@ -938,4 +1041,9 @@ def timeline():
 
 
 if __name__ == "__main__":
+    # 使用 Path 檢查 logs 資料夾有沒有存在，沒有就建立
+    logs_folder = Path("logs")
+    if not logs_folder.exists():
+        logs_folder.mkdir()
+
     app.run(host="0.0.0.0", port=5001, debug=True)
