@@ -31,3 +31,51 @@ python server.py
 - 注意：因立場分類所使用之Bert模型在開發時為載模型到本機使用，此模型無法上傳github，需手動下載並加入專案後，才可正常執行，位置放在`saved_model`資料夾下，[模型下載連結](https://drive.google.com/file/d/1Wkmv7rGtmyrjt5XIId_d2fus98L27hJj/view?usp=sharing)
 <img width="1084" alt="截圖 2025-03-19 晚上9 53 35" src="https://github.com/user-attachments/assets/520d840b-7912-417b-9a30-c292a7247a52" />
 
+
+## 開發環境安裝
+
+### 使用 poetry 管理及執行
+
+1. 安裝 poetry
+```bash
+pip install poetry
+```
+
+2. 使用 poetry 建立虛擬環境及安裝相依套件
+```bash
+poetry install
+```
+
+3. 執行程式
+```bash
+poetry run python server.py
+```
+
+## 正式環境
+使用 Gunicorn 部署，並使用 Nginx 作為反向代理伺服器
+
+### Gunicorn 部署指令
+gunicorn 啟動指令：
+```bash
+gunicorn -w 4 -b 0.0.0.0:8000 server:app
+```
+### Nginx 配置範例
+```nginx
+server {
+    listen 80;
+    server_name your_domain.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+### 定期執行 analyze.py 程式
+使用 cron 工作排程來定期執行 `analyze.py` 程式。每 10 分鐘執行一次，可使用以下指令設定：
+```bash
+*/10 * * * * /path/to/your/poetry/env/bin/poetry run python /path/to/your/project/analyze.py
+```

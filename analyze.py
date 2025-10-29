@@ -130,12 +130,15 @@ def centrality_analysis(task):
     try:
         # 若 download 資料夾不存在則建立，並將 raw_predict_data 儲存為 CSV 檔案
         download_folder = task_data_folder.joinpath("download")
+        raw_predict_file = download_folder.joinpath("raw_predict_data.csv")
         if not download_folder.exists():
             download_folder.mkdir(parents=True, exist_ok=True)
         raw_predict_data.to_csv(
-            download_folder.joinpath("raw_predict_data.csv"), index=False
+            raw_predict_file, index=False
         )
         logger.info("Download raw_predict_data CSV files saved.")
+        # 壓縮預測資料檔案並刪除原始檔案
+        zip_predict_file(download_folder, raw_predict_file)
     except Exception as e:
         logger.error(f"Error saving download raw_predict_data CSV: {e}")
 
@@ -464,6 +467,31 @@ def zip_gephi_files(download_folder: Path):
             logger.info(f"Gephi files zipped: {zip_filename}")
     except Exception as e:
         logger.error(f"Error zipping Gephi files: {e}")
+
+def zip_predict_file(download_folder: Path, predict_file: Path):
+    """
+    將 download 的預測資料壓縮成 zip 壓縮檔
+    完成壓縮後刪除原始被壓縮的檔案
+
+    Args:
+        download_folder (Path): download 資料夾路徑
+        predict_file (Path): 欲壓縮的檔案路徑
+    """
+    try:
+        zip_filename = download_folder.joinpath("raw_predict_data.zip")
+
+        if predict_file.exists() and predict_file.is_file():
+            with zipfile.ZipFile(zip_filename, "w", zipfile.ZIP_DEFLATED) as my_zip:
+                # 將檔案加入 zip，arcname 只保留檔名
+                my_zip.write(predict_file, arcname=predict_file.name)
+
+            logger.info(f"Predict file zipped: {zip_filename}")
+            # 刪除原始 raw_predict_data.csv 檔案
+            predict_file.unlink()
+        else:
+            logger.warning(f"Predict file not found: {predict_file}")
+    except Exception as e:
+        logger.error(f"Error zipping predict file: {e}")
 
 
 def transform_gephi_nodes(nodes):
